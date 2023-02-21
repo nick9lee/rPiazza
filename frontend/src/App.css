@@ -1,16 +1,38 @@
 .App {
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(200, 1fr);
+  grid-template-rows: repeat(200, 1fr);
+  height: 80vh;
+  width: 80vw;
+  margin: 0 auto;
+  border: 5px solid #333;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.cell {
+  height: 1fr;
+  width: 1fr;
+  background-color: #eee;
+  border: 0.1px solid #ccc;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.cell:hover {
+  background-color: #ccc;
+}
+
+.ColorPicker {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(1, 1fr);
+  height: 10vh;
+  width: 80vw;
+  margin: 0 auto;
+  border: 5px solid #333;
+}
+
+.ColorPicker .cell {
+  height: 1fr;
+  width: 1fr;
+  border: 5px solid #ccc;
 }
 
 .App-header {
