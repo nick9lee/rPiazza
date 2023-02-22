@@ -1,60 +1,14 @@
-.App {
-  display: grid;
-  grid-template-columns: repeat(200, 1fr);
-  grid-template-rows: repeat(200, 1fr);
-  height: 80vh;
-  width: 80vw;
-  margin: 0 auto;
-  border: 5px solid #333;
+#main {
+	margin: 0;
+	padding: 0;
+	/* background-color: grey; */
 }
 
-.cell {
-  height: 1fr;
-  width: 1fr;
-  background-color: #eee;
-  border: 0.1px solid #ccc;
-}
-
-.cell:hover {
-  background-color: #ccc;
-}
-
-.ColorPicker {
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  grid-template-rows: repeat(1, 1fr);
-  height: 10vh;
-  width: 80vw;
-  margin: 0 auto;
-  border: 5px solid #333;
-}
-
-.ColorPicker .cell {
-  height: 1fr;
-  width: 1fr;
-  border: 5px solid #ccc;
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+#canvas {
+	padding: 0;
+	margin: 0 auto;
+	background-color: white;
+	display: block;
+	border: 1px solid black;
+	/* overflow: hidden; */
 }
