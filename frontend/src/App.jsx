@@ -29,7 +29,7 @@ const COLORS = [
 ];
 
 const CANVAS_WIDTH = 900;
-const CANVAS_HEIGHT = 900;
+const CANVAS_HEIGHT = 850;
 
 const ORIGIN = {
 	x: 0,
@@ -147,7 +147,7 @@ function App() {
 			const storedTransform = context.getTransform();
 			context.canvas.width = context.canvas.width;
 			context.setTransform(storedTransform);
-			console.log(randomArray);
+
 			// change this part with real square data
 			context.fillStyle = "red";
 			randomArray.forEach((row) => {
@@ -235,6 +235,21 @@ function App() {
 				width="200px"
 				height="200px"
 			></canvas>
+			<div className="colorContainer">
+				<div className="colorSelector">
+					{COLORS.map((col) => {
+						return (
+							<div
+								key={col}
+								className="color"
+								style={{
+									backgroundColor: col,
+								}}
+							></div>
+						);
+					})}
+				</div>
+			</div>
 		</div>
 	);
 }

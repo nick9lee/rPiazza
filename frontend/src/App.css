@@ -12,3 +12,24 @@
 	border: 1px solid black;
 	/* overflow: hidden; */
 }
+
+.colorContainer {
+	display: flex;
+	justify-content: center;
+}
+
+.colorSelector {
+	overflow: hidden;
+	width: fit-content;
+	display: flex;
+	justify-content: center;
+	height: 3em;
+	margin: 1em 0;
+	outline: 1px solid black;
+	border-radius: 5em;
+}
+
+.color {
+	width: 5em;
+	outline: 1px solid black;
+}
