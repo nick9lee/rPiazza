@@ -5,6 +5,8 @@ const routes = require('./routes/routes');
 const express = require('express')
 const mongoose = require('mongoose');
 const mongoString = process.env.DATABASE_URL
+const Model = require('../model/model');
+
 
 // Connect to database
 mongoose.connect(mongoString);
@@ -34,6 +36,24 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   console.log('a user connected');
+
+  // Receives json from client with new data, updates database, then broadcasts to all connected clients
+   // Listen for 'newData' event from client
+   socket.on('newData', (data) => {
+    // create a new document using Mongoose
+    const newData = new Model(data);
+    // save the new document to the database
+    newData.save((err, savedData) => {
+      if (err) {
+        console.log(err);
+      } else {
+        // If successful, broadcast update to all connected clients 
+        console.log('New data saved:', savedData);
+        io.emit('newData', savedData)
+      }
+    });
+  });
+  // Listen for disconnect from clients
   socket.on('disconnect', () => {
     console.log('user disconnected');
   });
@@ -42,3 +62,7 @@ io.on('connection', (socket) => {
 server.listen(port, () => {
   console.log('listening on *:' + port);
 });
+
+
+
+
