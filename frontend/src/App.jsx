@@ -172,6 +172,14 @@ function App() {
 			context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 			context.restore();
 
+			context.fillStyle = "#555";
+			context.fillRect(
+				-5000 * CANVAS_WIDTH,
+				-5000 * CANVAS_HEIGHT,
+				10000 * CANVAS_WIDTH,
+				10000 * CANVAS_HEIGHT
+			);
+
 			// change this part with real square data
 			paintedCanvas.forEach((row) => {
 				row.forEach((col) => {
