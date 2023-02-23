@@ -64,6 +64,7 @@ function App() {
 	const lastOffsetRef = useRef(ORIGIN);
 	const currentColor = useRef(null);
 	let lastMousePos = null;
+	let [paintedCanvas, setPaintedCanvas] = useState(randomArray);
 
 	// update last offset
 	useEffect(() => {
@@ -107,12 +108,15 @@ function App() {
 	const mouseUp = useCallback(
 		(event) => {
 			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
-				console.log(randomArray[relMousePos.x][relMousePos.y]);
-				randomArray[relMousePos.x][relMousePos.y].color = currentColor.current;
-				// context.fillStyle = currentColor.current;
+				let temp = paintedCanvas;
+				temp[relMousePos.x][relMousePos.y].color =
+					currentColor.current ?? "#FFFFFF";
+				setPaintedCanvas(temp);
+
+				context.fillStyle = currentColor.current;
 				context.fillRect(
-					relMousePos.x * 10 * scale,
-					relMousePos.y * 10 * scale,
+					relMousePos.x * (10 * scale),
+					relMousePos.y * (10 * scale),
 					10 * scale,
 					10 * scale
 				);
@@ -158,29 +162,30 @@ function App() {
 
 	// draw
 	useLayoutEffect(() => {
+		console.log("here");
 		if (context) {
 			const squareSize = 10;
 
 			// clear canvas but maintain transform
-			const storedTransform = context.getTransform();
-			context.canvas.width = context.canvas.width;
-			context.setTransform(storedTransform);
+			context.save();
+			context.setTransform(1, 0, 0, 1, 0, 0);
+			context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+			context.restore();
 
 			// change this part with real square data
-			context.fillStyle = "red";
-			randomArray.forEach((row) => {
+			paintedCanvas.forEach((row) => {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
-						col.x * squareSize,
 						col.y * squareSize,
+						col.x * squareSize,
 						squareSize,
 						squareSize
 					);
 				});
 			});
 		}
-	}, [context, scale, offset, randomArray]);
+	}, [context, scale, offset, paintedCanvas]);
 
 	// add event listener on canvas for mouse position
 	useEffect(() => {
