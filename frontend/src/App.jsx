@@ -63,6 +63,7 @@ function App() {
 	const lastMousePosRef = useRef(ORIGIN);
 	const lastOffsetRef = useRef(ORIGIN);
 	const currentColor = useRef(null);
+	let lastMousePos = null;
 
 	// update last offset
 	useEffect(() => {
@@ -103,16 +104,31 @@ function App() {
 		[context]
 	);
 
-	const mouseUp = useCallback(() => {
-		document.removeEventListener("mousemove", mouseMove);
-		document.removeEventListener("mouseup", mouseUp);
-	}, [mouseMove]);
+	const mouseUp = useCallback(
+		(event) => {
+			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
+				console.log(randomArray[relMousePos.x][relMousePos.y]);
+				randomArray[relMousePos.x][relMousePos.y].color = currentColor.current;
+				// context.fillStyle = currentColor.current;
+				context.fillRect(
+					relMousePos.x * 10 * scale,
+					relMousePos.y * 10 * scale,
+					10 * scale,
+					10 * scale
+				);
+			}
+			document.removeEventListener("mousemove", mouseMove);
+			document.removeEventListener("mouseup", mouseUp);
+		},
+		[mouseMove]
+	);
 
 	const startPan = useCallback(
 		(event) => {
 			document.addEventListener("mousemove", mouseMove);
 			document.addEventListener("mouseup", mouseUp);
 			lastMousePosRef.current = { x: event.pageX, y: event.pageY };
+			lastMousePos = { x: event.pageX, y: event.pageY };
 		},
 		[mouseMove, mouseUp]
 	);
@@ -164,7 +180,7 @@ function App() {
 				});
 			});
 		}
-	}, [context, scale, offset]);
+	}, [context, scale, offset, randomArray]);
 
 	// add event listener on canvas for mouse position
 	useEffect(() => {
