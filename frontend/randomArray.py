@@ -12,7 +12,8 @@ for i in range(200):
         # Choose random color from list
         color = random.choice(colors)
         # Create JSON object
-        obj = {'column': j, 'row': i, 'color': "#FFFFFF"}        # Append object to row
+        obj = {'x': j, 'y': i, 'color': "#FFFFFF"}
+        # Append object to row
         row.append(obj)
     # Append row to 2D array
     array_2d.append(row)
