@@ -174,10 +174,10 @@ function App() {
 
 			context.fillStyle = "#555";
 			context.fillRect(
-				-5000 * CANVAS_WIDTH,
-				-5000 * CANVAS_HEIGHT,
-				10000 * CANVAS_WIDTH,
-				10000 * CANVAS_HEIGHT
+				(-5000 * CANVAS_WIDTH) / scale,
+				(-5000 * CANVAS_HEIGHT) / scale,
+				(10000 * CANVAS_WIDTH) / scale,
+				(10000 * CANVAS_HEIGHT) / scale
 			);
 
 			// change this part with real square data
