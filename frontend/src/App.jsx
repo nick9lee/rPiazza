@@ -66,6 +66,22 @@ function App() {
 	let lastMousePos = null;
 	let [paintedCanvas, setPaintedCanvas] = useState(randomArray);
 
+	// load the data first time the page loads
+	useEffect(() => {
+		fetch("http://localhost:4000/api/getAll", {
+			headers: {
+				accept: "application/json",
+				"content-type": "application/json",
+			},
+			method: "GET",
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				console.log(data);
+			})
+			.catch((err) => {});
+	}, []);
+
 	// update last offset
 	useEffect(() => {
 		lastOffsetRef.current = offset;
@@ -162,7 +178,6 @@ function App() {
 
 	// draw
 	useLayoutEffect(() => {
-		console.log("here");
 		if (context) {
 			const squareSize = 10;
 
