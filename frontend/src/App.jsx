@@ -40,7 +40,7 @@ const ORIGIN = {
 
 const ZOOM_SENSITIVITY = 500;
 
-const ratio = 1
+const ratio = 1;
 
 const socket = io("http://localhost:4000");
 
@@ -100,9 +100,10 @@ function App() {
 		});
 
 		socket.on("update", (data) => {
+			console.log(data);
 			const parsedData = JSON.parse(data);
 			const tempCanvas = paintedCanvas;
-			tempCanvas[parsedData.column][parsedData.row] = parsedData.color;
+			tempCanvas[parsedData.row][parsedData.column] = parsedData.color;
 			setPaintedCanvas(tempCanvas);
 
 			// possibly need to draw?
@@ -162,6 +163,8 @@ function App() {
 					currentColor.current ?? "#FFFFFF";
 
 				setPaintedCanvas(temp);
+				const data = temp[relMousePos.y][relMousePos.x];
+				socket.emit("newData", JSON.stringify(data));
 
 				context.fillStyle = currentColor.current;
 				context.fillRect(
