@@ -5,7 +5,7 @@ const routes = require('./routes/routes');
 const express = require('express')
 const mongoose = require('mongoose');
 const mongoString = process.env.DATABASE_URL
-const Model = require('../model/model');
+const Model = require('./model/model');
 
 
 // Connect to database

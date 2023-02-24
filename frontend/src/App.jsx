@@ -30,8 +30,8 @@ const COLORS = [
 	"#820080",
 ];
 
-const CANVAS_WIDTH = 1300;
-const CANVAS_HEIGHT = 850;
+const CANVAS_WIDTH = 1000;
+const CANVAS_HEIGHT = 650;
 
 const ORIGIN = {
 	x: 0,
@@ -40,7 +40,7 @@ const ORIGIN = {
 
 const ZOOM_SENSITIVITY = 500;
 
-const { devicePixelRatio: ratio = 1 } = window;
+const ratio = 1
 
 const socket = io("http://localhost:4000");
 
