@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
+    Id: {
+        required: true,
+        type: Number
+    },
     color: {
         required: true,
         type: String
