@@ -7,6 +7,8 @@ import {
 } from "react";
 import "./App.css";
 
+import io from "socket.io-client";
+
 import randomArray from "./output.json";
 
 const COLORS = [
@@ -40,6 +42,8 @@ const ZOOM_SENSITIVITY = 500;
 
 const { devicePixelRatio: ratio = 1 } = window;
 
+const socket = io("http://localhost:4000");
+
 function diffPoints(p1, p2) {
 	return { x: p1.x - p2.x, y: p1.y - p2.y };
 }
@@ -65,9 +69,11 @@ function App() {
 	const currentColor = useRef(null);
 	let lastMousePos = null;
 	let [paintedCanvas, setPaintedCanvas] = useState(randomArray);
+	const [isConnected, setIsConnected] = useState(socket.connected);
 
 	// load the data first time the page loads
 	useEffect(() => {
+		// do the primary fetch
 		fetch("http://localhost:4000/api/getAll", {
 			headers: {
 				accept: "application/json",
@@ -79,11 +85,34 @@ function App() {
 			.then((data) => {
 				// set the canvas
 				setPaintedCanvas(data);
-				// Open the communication socket
 			})
 			.catch((err) => {
 				console.log(err);
 			});
+
+		// setup the socket for comms
+		socket.on("connect", () => {
+			setIsConnected(true);
+		});
+
+		socket.on("disconnect", () => {
+			setIsConnected(false);
+		});
+
+		socket.on("update", (data) => {
+			const parsedData = JSON.parse(data);
+			const tempCanvas = paintedCanvas;
+			tempCanvas[parsedData.column][parsedData.row] = parsedData.color;
+			setPaintedCanvas(tempCanvas);
+
+			// possibly need to draw?
+		});
+
+		return () => {
+			socket.off("connect");
+			socket.off("disconnect");
+			socket.off("update");
+		};
 	}, []);
 
 	// update last offset
