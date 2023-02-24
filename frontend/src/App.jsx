@@ -77,9 +77,11 @@ function App() {
 		})
 			.then((res) => res.json())
 			.then((data) => {
-				console.log(data);
+				setPaintedCanvas(data);
 			})
-			.catch((err) => {});
+			.catch((err) => {
+				console.log(err);
+			});
 	}, []);
 
 	// update last offset
@@ -125,8 +127,9 @@ function App() {
 		(event) => {
 			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
 				let temp = paintedCanvas;
-				temp[relMousePos.x][relMousePos.y].color =
+				temp[relMousePos.y][relMousePos.x].color =
 					currentColor.current ?? "#FFFFFF";
+
 				setPaintedCanvas(temp);
 
 				context.fillStyle = currentColor.current;
@@ -140,7 +143,7 @@ function App() {
 			document.removeEventListener("mousemove", mouseMove);
 			document.removeEventListener("mouseup", mouseUp);
 		},
-		[mouseMove]
+		[mouseMove, paintedCanvas, lastMousePos]
 	);
 
 	const startPan = useCallback(
@@ -187,21 +190,21 @@ function App() {
 			context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 			context.restore();
 
-			context.fillStyle = "#555";
-			context.fillRect(
-				(-5000 * CANVAS_WIDTH) / scale,
-				(-5000 * CANVAS_HEIGHT) / scale,
-				(10000 * CANVAS_WIDTH) / scale,
-				(10000 * CANVAS_HEIGHT) / scale
-			);
-
+			// context.fillStyle = "#FFFF";
+			// context.fillRect(
+			// 	(-5000 * CANVAS_WIDTH) / scale,
+			// 	(-5000 * CANVAS_HEIGHT) / scale,
+			// 	(10000 * CANVAS_WIDTH) / scale,
+			// 	(10000 * CANVAS_HEIGHT) / scale
+			// );
+			console.log(paintedCanvas);
 			// change this part with real square data
 			paintedCanvas.forEach((row) => {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
-						col.y * squareSize,
-						col.x * squareSize,
+						(col.column - 1) * squareSize,
+						(col.row - 1) * squareSize,
 						squareSize,
 						squareSize
 					);
