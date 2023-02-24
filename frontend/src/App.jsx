@@ -85,7 +85,6 @@ function App() {
 			.then((data) => {
 				// set the canvas
 				setPaintedCanvas(data);
-				// Open the communication socket
 			})
 			.catch((err) => {
 				console.log(err);
