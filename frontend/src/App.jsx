@@ -28,7 +28,7 @@ const COLORS = [
 	"#820080",
 ];
 
-const CANVAS_WIDTH = 900;
+const CANVAS_WIDTH = 1300;
 const CANVAS_HEIGHT = 850;
 
 const ORIGIN = {
@@ -55,12 +55,35 @@ function scalePoint(p1, scale) {
 function App() {
 	const canvasRef = useRef(null);
 	const [context, setContext] = useState(null);
-	const [scale, setScale] = useState(ORIGIN);
+	const [scale, setScale] = useState(null);
 	const [offset, setOffset] = useState(ORIGIN);
 	const [mousePos, setMousePos] = useState(ORIGIN);
+	const [relMousePos, setRelMousePos] = useState(ORIGIN);
 	const [viewportTopLeft, setViewportTopLeft] = useState(ORIGIN);
 	const lastMousePosRef = useRef(ORIGIN);
 	const lastOffsetRef = useRef(ORIGIN);
+	const currentColor = useRef(null);
+	let lastMousePos = null;
+	let [paintedCanvas, setPaintedCanvas] = useState(randomArray);
+
+	// load the data first time the page loads
+	useEffect(() => {
+		fetch("http://localhost:4000/api/getAll", {
+			headers: {
+				accept: "application/json",
+				"content-type": "application/json",
+			},
+			method: "GET",
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				// set the canvas
+				setPaintedCanvas(data);
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}, []);
 
 	// update last offset
 	useEffect(() => {
@@ -101,16 +124,35 @@ function App() {
 		[context]
 	);
 
-	const mouseUp = useCallback(() => {
-		document.removeEventListener("mousemove", mouseMove);
-		document.removeEventListener("mouseup", mouseUp);
-	}, [mouseMove]);
+	const mouseUp = useCallback(
+		(event) => {
+			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
+				let temp = paintedCanvas;
+				temp[relMousePos.y][relMousePos.x].color =
+					currentColor.current ?? "#FFFFFF";
+
+				setPaintedCanvas(temp);
+
+				context.fillStyle = currentColor.current;
+				context.fillRect(
+					relMousePos.x * (10 * scale),
+					relMousePos.y * (10 * scale),
+					10 * scale,
+					10 * scale
+				);
+			}
+			document.removeEventListener("mousemove", mouseMove);
+			document.removeEventListener("mouseup", mouseUp);
+		},
+		[mouseMove, paintedCanvas, lastMousePos]
+	);
 
 	const startPan = useCallback(
 		(event) => {
 			document.addEventListener("mousemove", mouseMove);
 			document.addEventListener("mouseup", mouseUp);
 			lastMousePosRef.current = { x: event.pageX, y: event.pageY };
+			lastMousePos = { x: event.pageX, y: event.pageY };
 		},
 		[mouseMove, mouseUp]
 	);
@@ -144,25 +186,32 @@ function App() {
 			const squareSize = 10;
 
 			// clear canvas but maintain transform
-			const storedTransform = context.getTransform();
-			context.canvas.width = context.canvas.width;
-			context.setTransform(storedTransform);
+			context.save();
+			context.setTransform(1, 0, 0, 1, 0, 0);
+			context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+			context.restore();
 
+			context.fillStyle = "#aaa";
+			context.fillRect(
+				(-5000 * CANVAS_WIDTH) / scale,
+				(-5000 * CANVAS_HEIGHT) / scale,
+				(10000 * CANVAS_WIDTH) / scale,
+				(10000 * CANVAS_HEIGHT) / scale
+			);
 			// change this part with real square data
-			context.fillStyle = "red";
-			randomArray.forEach((row) => {
+			paintedCanvas.forEach((row) => {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
-						col.x * squareSize,
-						col.y * squareSize,
+						(col.column - 1) * squareSize,
+						(col.row - 1) * squareSize,
 						squareSize,
 						squareSize
 					);
 				});
 			});
 		}
-	}, [context, scale, offset]);
+	}, [context, scale, offset, paintedCanvas]);
 
 	// add event listener on canvas for mouse position
 	useEffect(() => {
@@ -226,6 +275,31 @@ function App() {
 		return () => canvasElem.removeEventListener("wheel", handleWheel);
 	}, [context, mousePos.x, mousePos.y, scale]);
 
+	// maintain the relative mouse position
+	useEffect(() => {
+		if (context) {
+			const storedTransform = context.getTransform();
+			const newRelative = context
+				.getTransform()
+				.invertSelf()
+				.transformPoint(mousePos);
+			context.setTransform(storedTransform);
+			relMousePos.x = Math.floor(newRelative.x / 10);
+			relMousePos.y = Math.floor(newRelative.y / 10);
+		}
+	}, [context, mousePos, relMousePos]);
+
+	function changeColor(color) {
+		currentColor.current = color;
+		let currentSelection = document.getElementsByClassName("selected");
+		if (currentSelection.length !== 0) {
+			currentSelection[0].textContent = "";
+			currentSelection[0].classList.remove("selected");
+		}
+		document.getElementById(color).classList.add("selected");
+		document.getElementById(color).textContent = "selected";
+	}
+
 	return (
 		<div id="main">
 			<canvas
@@ -240,11 +314,13 @@ function App() {
 					{COLORS.map((col) => {
 						return (
 							<div
+								id={col}
 								key={col}
 								className="color"
 								style={{
 									backgroundColor: col,
 								}}
+								onClick={() => changeColor(col)}
 							></div>
 						);
 					})}
