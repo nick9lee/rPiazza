@@ -77,6 +77,7 @@ function App() {
 		})
 			.then((res) => res.json())
 			.then((data) => {
+				// set the canvas
 				setPaintedCanvas(data);
 			})
 			.catch((err) => {
@@ -190,14 +191,13 @@ function App() {
 			context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 			context.restore();
 
-			// context.fillStyle = "#FFFF";
-			// context.fillRect(
-			// 	(-5000 * CANVAS_WIDTH) / scale,
-			// 	(-5000 * CANVAS_HEIGHT) / scale,
-			// 	(10000 * CANVAS_WIDTH) / scale,
-			// 	(10000 * CANVAS_HEIGHT) / scale
-			// );
-			console.log(paintedCanvas);
+			context.fillStyle = "#aaa";
+			context.fillRect(
+				(-5000 * CANVAS_WIDTH) / scale,
+				(-5000 * CANVAS_HEIGHT) / scale,
+				(10000 * CANVAS_WIDTH) / scale,
+				(10000 * CANVAS_HEIGHT) / scale
+			);
 			// change this part with real square data
 			paintedCanvas.forEach((row) => {
 				row.forEach((col) => {
