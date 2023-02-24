@@ -20,24 +20,13 @@ database.once("connected", () => {
 });
 
 const app = express();
-const allowedHosts = ["http://localhost:4000", "http://localhost:5173"];
-app.use(
-	cors({
-		origin: function (origin, callback) {
-			if (!origin) return callback(null, true);
-
-			if (allowedHosts.indexOf(origin) === -1) {
-				var msg =
-					"The CORS policy for this site does not allow acces from the specified origin";
-				return callback(new Error(msg), false);
-			}
-
-			return callback(null, true);
-		},
-	})
-);
-
 const port = 4000;
+const corsOptions ={
+   origin:'*', 
+   credentials:true,            //access-control-allow-credentials:true
+   optionSuccessStatus:200,
+}
+app.use(cors(corsOptions)) // Use this after the variable declaration
 
 app.use("/api", routes);
 app.use(express.json());
