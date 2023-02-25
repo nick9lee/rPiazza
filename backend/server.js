@@ -51,18 +51,22 @@ io.on("connection", (socket) => {
 	// Listen for 'newData' event from client
 	socket.on("newData", (data) => {
 		console.log(data);
-		// create a new document using Mongoose
-		// const newData = await Model.create(JSON.parse(data));
-		// // save the new document to the database
-		// newData.save((err, savedData) => {
-		// 	if (err) {
-		// 		console.log(err);
-		// 	} else {
-		// 		// If successful, broadcast update to all connected clients
-		// 		console.log("New data saved:", savedData);
-		// 	}
-		// });
-		io.emit("update", data);
+
+		// Convert the string to a JavaScript object
+		const newData = JSON.parse(data);
+
+      // Update the document in the database based on the ID
+      Model.findByIdAndUpdate(newData._id, { $set: { color: newData.color } }, { new: true })
+        .then((doc) => {
+          console.log(`Updated document: ${doc}`);
+		  io.emit("update", data);
+          socket.emit('update-success', doc); // emit a success message back to the client
+        })
+        .catch((err) => {
+          console.error(`Error updating document: ${err}`);
+          socket.emit('update-failure', err); // emit an error message back to the client
+        });
+
 	});
 	// Listen for disconnect from clients
 	socket.on("disconnect", () => {
@@ -73,3 +77,5 @@ io.on("connection", (socket) => {
 server.listen(port, () => {
 	console.log("listening on *:" + port);
 });
+
+
