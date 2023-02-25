@@ -106,7 +106,6 @@ function App() {
 			const parsed = JSON.parse(data);
 			setPaintedCanvas((old) => {
 				const canvas = [...old];
-				console.log(canvas[parsed.row - 1]);
 				canvas[parsed.row - 1] = [...canvas[parsed.row - 1]];
 				canvas[parsed.row - 1][parsed.column - 1].color = parsed.color;
 				return canvas;
