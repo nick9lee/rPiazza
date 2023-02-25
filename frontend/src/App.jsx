@@ -68,12 +68,13 @@ function App() {
 	const lastOffsetRef = useRef(ORIGIN);
 	const currentColor = useRef(null);
 	let lastMousePos = null;
-	let [paintedCanvas, setPaintedCanvas] = useState(randomArray);
+	const [paintedCanvas, setPaintedCanvas] = useState(null);
 	const [isConnected, setIsConnected] = useState(socket.connected);
 
 	// load the data first time the page loads
 	useEffect(() => {
 		// do the primary fetch
+		let ignore = false;
 		fetch("http://localhost:4000/api/getAll", {
 			headers: {
 				accept: "application/json",
@@ -84,7 +85,9 @@ function App() {
 			.then((res) => res.json())
 			.then((data) => {
 				// set the canvas
-				setPaintedCanvas(data);
+				if (!ignore) {
+					setPaintedCanvas(data);
+				}
 			})
 			.catch((err) => {
 				console.log(err);
@@ -100,19 +103,21 @@ function App() {
 		});
 
 		socket.on("update", (data) => {
-			console.log(data);
-			const parsedData = JSON.parse(data);
-			const tempCanvas = paintedCanvas;
-			tempCanvas[parsedData.row][parsedData.column] = parsedData.color;
-			setPaintedCanvas(tempCanvas);
-
-			// possibly need to draw?
+			const parsed = JSON.parse(data);
+			setPaintedCanvas((old) => {
+				const canvas = [...old];
+				console.log(canvas[parsed.row - 1]);
+				canvas[parsed.row - 1] = [...canvas[parsed.row - 1]];
+				canvas[parsed.row - 1][parsed.column - 1].color = parsed.color;
+				return canvas;
+			});
 		});
 
 		return () => {
 			socket.off("connect");
 			socket.off("disconnect");
 			socket.off("update");
+			ignore = true;
 		};
 	}, []);
 
@@ -158,7 +163,7 @@ function App() {
 	const mouseUp = useCallback(
 		(event) => {
 			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
-				let temp = paintedCanvas;
+				let temp = structuredClone(paintedCanvas);
 				temp[relMousePos.y][relMousePos.x].color =
 					currentColor.current ?? "#FFFFFF";
 
@@ -232,7 +237,7 @@ function App() {
 				(10000 * CANVAS_HEIGHT) / scale
 			);
 			// change this part with real square data
-			paintedCanvas.forEach((row) => {
+			paintedCanvas?.forEach((row) => {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
