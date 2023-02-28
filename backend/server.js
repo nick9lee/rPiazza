@@ -19,6 +19,26 @@ database.once("connected", () => {
 	console.log("Database Connected");
 });
 
+/* To re-create database
+// Insert data one at a time using a double for loop
+for (let row = 0; row < 200; row++) {
+	for (let col = 0; col < 200; col++) {
+	  const newData = new Model({
+		color: "#888888",
+		row: row,
+		column: col,
+		timestamp: 0
+	  });
+  
+	  newData.save((err) => {
+		if (err) {
+		  console.error(err);
+		}
+	  });
+	}
+  }
+  */
+
 const app = express();
 const port = 4000;
 const cors = require("cors");
