@@ -166,9 +166,7 @@ function App() {
 				let temp = structuredClone(paintedCanvas);
 				const data = temp[relMousePos.y][relMousePos.x];
 				data.color = currentColor.current ?? "#FFFFFF";
-				console.log(JSON.stringify(data));
 				data.timestamp += 1;
-				console.log(JSON.stringify(data));
 
 				socket.emit("newData", JSON.stringify(data));
 			}
