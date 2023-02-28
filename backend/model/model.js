@@ -13,9 +13,9 @@ const dataSchema = new mongoose.Schema({
         required: true,
         type: Number
     },
-    dateTime: {
+    timestamp: {
         required: true,
-        type: String
+        type: Number
     }
 })
 
