@@ -108,6 +108,7 @@ function App() {
 				const canvas = [...old];
 				canvas[parsed.row] = [...canvas[parsed.row]];
 				canvas[parsed.row][parsed.column].color = parsed.color;
+				canvas[parsed.row][parsed.column].timestamp = parsed.timestamp;
 				return canvas;
 			});
 		});
@@ -165,8 +166,9 @@ function App() {
 				let temp = structuredClone(paintedCanvas);
 				const data = temp[relMousePos.y][relMousePos.x];
 				data.color = currentColor.current ?? "#FFFFFF";
+				console.log(JSON.stringify(data));
 				data.timestamp += 1;
-				console.log(data);
+				console.log(JSON.stringify(data));
 
 				socket.emit("newData", JSON.stringify(data));
 			}

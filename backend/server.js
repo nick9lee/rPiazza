@@ -75,18 +75,21 @@ io.on("connection", (socket) => {
 		// Convert the string to a JavaScript object
 		const newData = JSON.parse(data);
 
-      // Update the document in the database based on the ID
-      Model.findByIdAndUpdate(newData._id, { $set: { color: newData.color } }, { new: true })
-        .then((doc) => {
-          console.log(`Updated document: ${doc}`);
-		  io.emit("update", data);
-          socket.emit('update-success', doc); // emit a success message back to the client
-        })
-        .catch((err) => {
-          console.error(`Error updating document: ${err}`);
-          socket.emit('update-failure', err); // emit an error message back to the client
-        });
-
+		// Update the document in the database based on the ID
+		Model.findByIdAndUpdate(
+			newData._id,
+			{ $set: { color: newData.color, timestamp: newData.timestamp } },
+			{ new: true }
+		)
+			.then((doc) => {
+				console.log(`Updated document: ${doc}`);
+				io.emit("update", data);
+				socket.emit("update-success", doc); // emit a success message back to the client
+			})
+			.catch((err) => {
+				console.error(`Error updating document: ${err}`);
+				socket.emit("update-failure", err); // emit an error message back to the client
+			});
 	});
 	// Listen for disconnect from clients
 	socket.on("disconnect", () => {
@@ -97,5 +100,3 @@ io.on("connection", (socket) => {
 server.listen(port, () => {
 	console.log("listening on *:" + port);
 });
-
-
