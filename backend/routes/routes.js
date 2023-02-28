@@ -11,7 +11,7 @@ router.get("/getAll", async (req, res) => {
 		const data = await Model.find();
 		let transformedArray = [...Array(200)].map((e) => Array(200));
 		data.forEach((entry, index) => {
-			transformedArray[entry.row][entry.column] = entry;
+			transformedArray[Math.floor(index / 200)][index % 200] = entry;
 		});
 		res.json(transformedArray);
 	} catch (error) {
