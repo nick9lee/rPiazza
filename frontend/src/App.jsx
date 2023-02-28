@@ -163,20 +163,12 @@ function App() {
 		(event) => {
 			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
 				let temp = structuredClone(paintedCanvas);
-				temp[relMousePos.y][relMousePos.x].color =
-					currentColor.current ?? "#FFFFFF";
-
-				setPaintedCanvas(temp);
 				const data = temp[relMousePos.y][relMousePos.x];
-				socket.emit("newData", JSON.stringify(data));
+				data.color = currentColor.current ?? "#FFFFFF";
+				data.timestamp += 1;
+				console.log(data);
 
-				context.fillStyle = currentColor.current;
-				context.fillRect(
-					relMousePos.x * (10 * scale),
-					relMousePos.y * (10 * scale),
-					10 * scale,
-					10 * scale
-				);
+				socket.emit("newData", JSON.stringify(data));
 			}
 			document.removeEventListener("mousemove", mouseMove);
 			document.removeEventListener("mouseup", mouseUp);
@@ -240,8 +232,8 @@ function App() {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
-						(col.column ) * squareSize,
-						(col.row ) * squareSize,
+						col.column * squareSize,
+						col.row * squareSize,
 						squareSize,
 						squareSize
 					);
