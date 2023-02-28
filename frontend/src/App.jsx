@@ -106,8 +106,8 @@ function App() {
 			const parsed = JSON.parse(data);
 			setPaintedCanvas((old) => {
 				const canvas = [...old];
-				canvas[parsed.row - 1] = [...canvas[parsed.row - 1]];
-				canvas[parsed.row - 1][parsed.column - 1].color = parsed.color;
+				canvas[parsed.row] = [...canvas[parsed.row]];
+				canvas[parsed.row][parsed.column].color = parsed.color;
 				return canvas;
 			});
 		});
@@ -240,8 +240,8 @@ function App() {
 				row.forEach((col) => {
 					context.fillStyle = col.color;
 					context.fillRect(
-						(col.column - 1) * squareSize,
-						(col.row - 1) * squareSize,
+						(col.column ) * squareSize,
+						(col.row ) * squareSize,
 						squareSize,
 						squareSize
 					);
