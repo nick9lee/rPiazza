@@ -75,12 +75,12 @@ function App() {
 	useEffect(() => {
 		// do the primary fetch
 		let ignore = false;
-		fetch("http://localhost:4000/api/getAll", {
+		fetch("http://localhost:8080/api/getAll", {
+			method: "GET",
 			headers: {
 				accept: "application/json",
 				"content-type": "application/json",
-			},
-			method: "GET",
+			}
 		})
 			.then((res) => res.json())
 			.then((data) => {

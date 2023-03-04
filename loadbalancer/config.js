@@ -2,6 +2,14 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const axios = require('axios');
+
+const cors = require("cors");
+const corsOptions = {
+	origin: "*",
+	credentials: true, //access-control-allow-credentials:true
+	optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions)); // Use this after the variable declaration
  
 // Application servers
 const servers = [
@@ -18,7 +26,6 @@ const handler = async (req, res) =>{
  
     // Destructure following properties from request object
     const { method, url, headers, body } = req;
- 
     // Select the current server to forward the request
     const server = servers[current];
  
