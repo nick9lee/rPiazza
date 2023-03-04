@@ -40,7 +40,9 @@ for (let row = 0; row < 200; row++) {
   */
 
 const app = express();
-const port = 4000;
+
+const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
+
 const cors = require("cors");
 const corsOptions = {
 	origin: "*",
