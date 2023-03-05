@@ -18,3 +18,12 @@ router.get("/getAll", async (req, res) => {
 		res.status(500).json({ message: error.message });
 	}
 });
+
+// Get key endpoint
+router.get("/getKey", async (req, res) => {
+	try {
+		data = JSON.parse(req.query);
+		console.log(data);
+		res.json({ val: true });
+	} catch (err) {}
+});

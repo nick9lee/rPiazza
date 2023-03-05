@@ -1,21 +1,21 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
-  "scripts": {
-    "start": "nodemon server.js",
-    "start-server-1": "PORT=4000 nodemon server.js",
-    "start-server-2": "PORT=4001 nodemon server.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "mongoose": "^6.9.2",
-    "nodemon": "^2.0.20",
-    "socket.io": "^4.6.1"
-  }
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "",
+	"main": "server.js",
+	"scripts": {
+		"start": "nodemon server.js",
+		"start-server-1": "PORT=4000 OTHERPORT=4001 nodemon server.js",
+		"start-server-2": "PORT=4001 OTHERPORT=4000 nodemon server.js"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"cors": "^2.8.5",
+		"dotenv": "^16.0.3",
+		"express": "^4.18.2",
+		"mongoose": "^6.9.2",
+		"nodemon": "^2.0.20",
+		"socket.io": "^4.6.1"
+	}
 }

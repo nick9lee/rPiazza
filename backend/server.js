@@ -58,7 +58,7 @@ const io = require("socket.io")(server, {
 		origin: "*",
 		methods: ["GET", "POST"],
 	},
-  transports: ['websocket', 'polling'],
+	transports: ["websocket", "polling"],
 });
 
 app.use("/api", routes);
@@ -72,28 +72,7 @@ io.on("connection", (socket) => {
 
 	// Receives json from client with new data, updates database, then broadcasts to all connected clients
 	// Listen for 'newData' event from client
-	socket.on("newData", (data) => {
-		console.log(data);
-
-		// Convert the string to a JavaScript object
-		const newData = JSON.parse(data);
-
-		// Update the document in the database based on the ID
-		Model.findByIdAndUpdate(
-			newData._id,
-			{ $set: { color: newData.color, timestamp: newData.timestamp } },
-			{ new: true }
-		)
-			.then((doc) => {
-				console.log(`Updated document: ${doc}`);
-				io.emit("update", data);
-				socket.emit("update-success", doc); // emit a success message back to the client
-			})
-			.catch((err) => {
-				console.error(`Error updating document: ${err}`);
-				socket.emit("update-failure", err); // emit an error message back to the client
-			});
-	});
+	socket.on("newData", handleChange(data));
 	// Listen for disconnect from clients
 	socket.on("disconnect", () => {
 		console.log("user disconnected");
@@ -103,3 +82,60 @@ io.on("connection", (socket) => {
 server.listen(port, () => {
 	console.log("listening on *:" + port);
 });
+
+// each entry has a key
+// when other server calls for key, this server checks if it is currently locking it
+// if not then send a bad response
+// if yes then drop it
+
+// get request function (to ask for lock)
+function getKey(row, col) {
+	let query = new URLSearchParams({
+		row: row,
+		col: col,
+	});
+
+	fetch("localhost:" + process.env.OTHERPORT + "/getKey?" + query.toString(), {
+		method: "GET",
+		headers: {
+			accept: "application/json",
+			"content-type": "application/json",
+		},
+	})
+		.then((res) => res.json())
+		.then((data) => {
+			console.log(data);
+		})
+		.catch((err) => console.error(err));
+}
+
+// post request to tell other server to save to its own database.
+
+let keys = new Array(200).fill().map(() => new Array(200).fill(0));
+
+function handleChange(data) {
+	// aquire lock
+	let result = getKey(data.row, data.col);
+	// send to other server
+
+	console.log(data);
+
+	// Convert the string to a JavaScript object
+	const newData = JSON.parse(data);
+
+	// Update the document in the database based on the ID
+	Model.findByIdAndUpdate(
+		newData._id,
+		{ $set: { color: newData.color, timestamp: newData.timestamp } },
+		{ new: true }
+	)
+		.then((doc) => {
+			console.log(`Updated document: ${doc}`);
+			io.emit("update", data);
+			socket.emit("update-success", doc); // emit a success message back to the client
+		})
+		.catch((err) => {
+			console.error(`Error updating document: ${err}`);
+			socket.emit("update-failure", err); // emit an error message back to the client
+		});
+}
