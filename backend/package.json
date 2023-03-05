@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
-    "start-server-1": "set PORT=4000 && nodemon server.js",
-    "start-server-2": "set PORT=4001 && nodemon server.js"
+    "start-server-1": "PORT=4000 nodemon server.js",
+    "start-server-2": "PORT=4001 nodemon server.js"
   },
   "author": "",
   "license": "ISC",

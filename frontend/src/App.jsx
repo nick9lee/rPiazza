@@ -42,7 +42,9 @@ const ZOOM_SENSITIVITY = 500;
 
 const ratio = 1;
 
-const socket = io("http://localhost:4000");
+const socket = io("http://localhost:80", {
+	transport: ["websocket", "polling"]
+});
 
 function diffPoints(p1, p2) {
 	return { x: p1.x - p2.x, y: p1.y - p2.y };
@@ -75,7 +77,7 @@ function App() {
 	useEffect(() => {
 		// do the primary fetch
 		let ignore = false;
-		fetch("http://localhost:8080/api/getAll", {
+		fetch("http://localhost:80/api/getAll", {
 			method: "GET",
 			headers: {
 				accept: "application/json",

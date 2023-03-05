@@ -58,6 +58,7 @@ const io = require("socket.io")(server, {
 		origin: "*",
 		methods: ["GET", "POST"],
 	},
+  transports: ['websocket', 'polling'],
 });
 
 app.use("/api", routes);
