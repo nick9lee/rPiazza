@@ -1,11 +1,13 @@
 // Hidden file, contains database URL
 require("dotenv").config();
+const fetch = require("node-fetch");
 
 const routes = require("./routes/routes");
 const express = require("express");
 const mongoose = require("mongoose");
 const mongoString = process.env.DATABASE_URL;
 const Model = require("./model/model");
+const { getKey, setKey } = require("./keys");
 
 // Connect to database
 mongoose.connect(mongoString);
@@ -72,7 +74,7 @@ io.on("connection", (socket) => {
 
 	// Receives json from client with new data, updates database, then broadcasts to all connected clients
 	// Listen for 'newData' event from client
-	socket.on("newData", handleChange(data));
+	socket.on("newData", (data) => handleChange(data, socket));
 	// Listen for disconnect from clients
 	socket.on("disconnect", () => {
 		console.log("user disconnected");
@@ -83,19 +85,17 @@ server.listen(port, () => {
 	console.log("listening on *:" + port);
 });
 
-// each entry has a key
-// when other server calls for key, this server checks if it is currently locking it
-// if not then send a bad response
-// if yes then drop it
-
-// get request function (to ask for lock)
-function getKey(row, col) {
+async function getLock(data) {
 	let query = new URLSearchParams({
-		row: row,
-		col: col,
+		id: data._id,
+		row: data.row,
+		column: data.column,
+		timestamp: data.timestamp,
+		color: data.color,
 	});
+	let url = "http://localhost:"+ process.env.OTHERPORT + "/api/getKey?" + query;
 
-	fetch("localhost:" + process.env.OTHERPORT + "/getKey?" + query.toString(), {
+	return await fetch(url, {
 		method: "GET",
 		headers: {
 			accept: "application/json",
@@ -103,39 +103,82 @@ function getKey(row, col) {
 		},
 	})
 		.then((res) => res.json())
-		.then((data) => {
-			console.log(data);
+		.then((json) => {
+			if(json.locked === false){
+				setKey(data.row, data.column, 1);
+				return true;
+			}
+			return false;
 		})
 		.catch((err) => console.error(err));
 }
 
-// post request to tell other server to save to its own database.
-
-let keys = new Array(200).fill().map(() => new Array(200).fill(0));
-
-function handleChange(data) {
+async function handleChange(data, socket) {
 	// aquire lock
-	let result = getKey(data.row, data.col);
-	// send to other server
-
-	console.log(data);
-
-	// Convert the string to a JavaScript object
 	const newData = JSON.parse(data);
-
-	// Update the document in the database based on the ID
-	Model.findByIdAndUpdate(
-		newData._id,
-		{ $set: { color: newData.color, timestamp: newData.timestamp } },
-		{ new: true }
-	)
-		.then((doc) => {
-			console.log(`Updated document: ${doc}`);
-			io.emit("update", data);
-			socket.emit("update-success", doc); // emit a success message back to the client
-		})
-		.catch((err) => {
-			console.error(`Error updating document: ${err}`);
-			socket.emit("update-failure", err); // emit an error message back to the client
-		});
+	let result = await getLock(newData);
+	console.log(result, "here");
+	if(result === true){
+		Model.findByIdAndUpdate(
+			newData._id,
+			{ $set: { color: newData.color, timestamp: newData.timestamp } },
+			{ new: true }
+		)
+			.then((doc) => {
+				console.log(`Updated document: ${doc}`);
+				io.emit("update", data);
+				socket.emit("update-success", doc); // emit a success message back to the client
+				setKey(newData.row, newData.column, 0);
+			})
+			.catch((err) => {
+				console.error(`Error updating document: ${err}`);
+				socket.emit("update-failure", err); // emit an error message back to the client
+			});
+	}
+	else{
+		console.log("locked");
+	}
 }
+
+app.get("/api/getKey", async (req, res) => {
+	try {
+		let row = parseInt(req.query.row);
+		let column = parseInt(req.query.column);
+		let key = getKey(row, column);
+		console.log("row: " + row + " column: " + column + " key: " + key);
+		if(key === 0) {
+			try {
+				let id = req.query.id;
+				let color = req.query.color;
+				let timestamp = parseInt(req.query.timestamp) + 1;
+				let result  = await Model.findByIdAndUpdate(
+					id,
+					{ $set: { color: color, timestamp: timestamp } },
+					{ new: true }
+				)
+					.then((doc) => {
+						console.log(`Updated document: ${doc}`);
+						io.emit("update", req.query);
+						return true;
+					})
+					.catch((err) => {
+						console.error(`Error updating document: ${err}`);
+						return false;
+					});
+				if(result == false){
+					throw new Error("could not save");
+				}
+				// save in local server
+				return res.status(200).json({ locked: false });
+			} catch (err) {
+				console.error(err);
+				return res.status(409).send("could not save");
+			}
+		}else{
+			return res.status(423).json({ locked: true });
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(400).send("there was an error");
+	}
+});

@@ -3,7 +3,8 @@ const Model = require("../model/model");
 
 const router = express.Router();
 
-module.exports = router;
+
+const {getKey, setKey} = require("../keys");
 
 //Get all data
 router.get("/getAll", async (req, res) => {
@@ -20,10 +21,7 @@ router.get("/getAll", async (req, res) => {
 });
 
 // Get key endpoint
-router.get("/getKey", async (req, res) => {
-	try {
-		data = JSON.parse(req.query);
-		console.log(data);
-		res.json({ val: true });
-	} catch (err) {}
-});
+
+
+
+module.exports = router;
