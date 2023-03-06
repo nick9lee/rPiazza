@@ -77,6 +77,7 @@ const io = require("socket.io")(server, {
 		methods: ["GET", "POST"],
 	},
 	transports: ["websocket", "polling"],
+	path: "/socket",
 });
 
 app.use("/api", routes);
@@ -109,7 +110,7 @@ async function getLock(data) {
 		timestamp: data.timestamp,
 		color: data.color,
 	});
-	let url = "http://localhost:"+ process.env.OTHERPORT + "/api/getKey?" + query;
+	let url = process.env.OTHERHOST + "/api/getKey?" + query;
 
 	return await fetch(url, {
 		method: "GET",
@@ -120,7 +121,7 @@ async function getLock(data) {
 	})
 		.then((res) => res.json())
 		.then((json) => {
-			if(json.locked === false){
+			if (json.locked === false) {
 				setKey(data.row, data.column, 1);
 				return true;
 			}
@@ -134,7 +135,7 @@ async function handleChange(data, socket) {
 	const newData = JSON.parse(data);
 	let result = await getLock(newData);
 	console.log(result, "here");
-	if(result === true){
+	if (result === true) {
 		Model.findByIdAndUpdate(
 			newData._id,
 			{ $set: { color: newData.color, timestamp: newData.timestamp } },
@@ -150,8 +151,7 @@ async function handleChange(data, socket) {
 				console.error(`Error updating document: ${err}`);
 				socket.emit("update-failure", err); // emit an error message back to the client
 			});
-	}
-	else{
+	} else {
 		console.log("locked");
 	}
 }
@@ -162,12 +162,12 @@ app.get("/api/getKey", async (req, res) => {
 		let column = parseInt(req.query.column);
 		let key = getKey(row, column);
 		console.log("row: " + row + " column: " + column + " key: " + key);
-		if(key === 0) {
+		if (key === 0) {
 			try {
 				let id = req.query.id;
 				let color = req.query.color;
 				let timestamp = parseInt(req.query.timestamp) + 1;
-				let result  = await Model.findByIdAndUpdate(
+				let result = await Model.findByIdAndUpdate(
 					id,
 					{ $set: { color: color, timestamp: timestamp } },
 					{ new: true }
@@ -181,7 +181,7 @@ app.get("/api/getKey", async (req, res) => {
 						console.error(`Error updating document: ${err}`);
 						return false;
 					});
-				if(result == false){
+				if (result == false) {
 					throw new Error("could not save");
 				}
 				// save in local server
@@ -190,7 +190,7 @@ app.get("/api/getKey", async (req, res) => {
 				console.error(err);
 				return res.status(409).send("could not save");
 			}
-		}else{
+		} else {
 			return res.status(423).json({ locked: true });
 		}
 	} catch (err) {
