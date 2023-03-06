@@ -9,17 +9,7 @@ const mongoString = process.env.DATABASE_URL;
 const Model = require("./model/model");
 const { getKey, setKey } = require("./keys");
 
-// Connect to database
-mongoose.connect(mongoString);
-const database = mongoose.connection;
 
-database.on("error", (error) => {
-	console.log(error);
-});
-
-database.once("connected", () => {
-	console.log("Database Connected");
-});
 
 /* To re-create database
 // Insert data one at a time using a double for loop
@@ -44,6 +34,32 @@ for (let row = 0; row < 200; row++) {
 const app = express();
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
+
+if(port == 4000) {
+	// Connect to database one
+	mongoose.connect(process.env.DATABASE_URL);
+	const database = mongoose.connection;
+
+	database.on("error", (error) => {
+	console.log(error);
+});
+
+	database.once("connected", () => {
+	console.log("Database one Connected");
+});
+} else {
+	// Connect to database two
+	mongoose.connect(process.env.DATABASE_TWO_URL);
+	const database = mongoose.connection;
+
+	database.on("error", (error) => {
+	console.log(error);
+});
+
+database.once("connected", () => {
+	console.log("Database two Connected");
+});
+}
 
 const cors = require("cors");
 const corsOptions = {
