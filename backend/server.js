@@ -61,7 +61,7 @@ const io = require("socket.io")(server, {
 		methods: ["GET", "POST"],
 	},
 	transports: ["websocket", "polling"],
-	path: "/api",
+	path: "/socket",
 });
 
 app.use("/api", routes);

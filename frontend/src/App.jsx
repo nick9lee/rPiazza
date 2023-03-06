@@ -44,7 +44,7 @@ const ratio = 1;
 
 const socket = io(import.meta.env.VITE_SOCKET_URL, {
 	transport: ["websocket", "polling"],
-	path: "/api",
+	path: "/socket",
 });
 
 function diffPoints(p1, p2) {
