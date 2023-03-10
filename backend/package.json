@@ -7,8 +7,8 @@
 		"start": "nodemon server.js",
 		"start-server-1": "PORT=4000 OTHERHOST=http://localhost:4001 nodemon server.js",
 		"start-server-2": "PORT=4000 OTHERHOST=http://localhost:4000 nodemon server.js",
-		"start-server-1-live": "PORT=4000 OTHERHOST=http://[2605:fd00:4:1000:f816:3eff:fe2d:16da] nodemon server.js",
-		"start-server-2-live": "PORT=4000 OTHERHOST=http://[2605:fd00:4:1000:f816:3eff:feab:bd0] nodemon server.js"
+		"start-server-1-live": "PORT=4000 OTHERHOST=http://piazza2.ahmedamer.tech nodemon server.js",
+		"start-server-2-live": "PORT=4000 OTHERHOST=http://piazza1.ahmedamer.tech nodemon server.js"
 	},
 	"author": "",
 	"license": "ISC",
