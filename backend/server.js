@@ -167,9 +167,9 @@ app.get("/api/getKey", async (req, res) => {
 				let id = req.query.id;
 				let color = req.query.color;
 				let timestamp = parseInt(req.query.timestamp) + 1;
-				let result = await Model.findByIdAndUpdate(
-					id,
-					{ $set: { color: color, timestamp: timestamp } },
+				let result = await Model.findOneAndUpdate(
+					{row: row, column: column}, 
+					{ $set: { color: color, timestamp: timestamp } }, 
 					{ new: true }
 				)
 					.then((doc) => {
