@@ -1,48 +1,28 @@
 // Hidden file, contains database URL
-require("dotenv").config({path: `./env/.env.${process.env.NODE_ENV}`});
+require("dotenv").config({ path: `./env/.env.${process.env.NODE_ENV}` });
 const fetch = require("node-fetch");
 
 const routes = require("./routes/routes");
+const axios = require("axios");
 const express = require("express");
 const mongoose = require("mongoose");
 const mongoString = process.env.DATABASE_URL;
 const Model = require("./model/model");
 const { getKey, setKey } = require("./keys");
-
-
-
-/* To re-create database
-// Insert data one at a time using a double for loop
-for (let row = 0; row < 200; row++) {
-	for (let col = 0; col < 200; col++) {
-	  const newData = new Model({
-		color: "#888888",
-		row: row,
-		column: col,
-		timestamp: 0
-	  });
-  
-	  newData.save((err) => {
-		if (err) {
-		  console.error(err);
-		}
-	  });
-	}
-  }
-  */
+const otherServers = [process.env.SECOND_HOST, process.env.THIRD_HOST];
 
 const app = express();
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
-	// Connect to database one
-	mongoose.connect(process.env.DATABASE_URL);
-	const database = mongoose.connection;
+// Connect to database one
+mongoose.connect(process.env.DATABASE_URL);
+const database = mongoose.connection;
 
-	database.on("error", (error) => {
+database.on("error", (error) => {
 	console.log(error);
 });
 
-	database.once("connected", () => {
+database.once("connected", () => {
 	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
 
@@ -55,8 +35,9 @@ const corsOptions = {
 app.use(cors(corsOptions)); // Use this after the variable declaration
 
 const http = require("http");
+const { restart } = require("nodemon");
 const server = http.createServer(app);
-const io = require("socket.io")(server, {
+const clientSockets = require("socket.io")(server, {
 	cors: {
 		origin: "*",
 		methods: ["GET", "POST"],
@@ -71,12 +52,10 @@ app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
 
-io.on("connection", (socket) => {
+clientSockets.on("connection", (socket) => {
 	console.log("a user connected");
-
-	// Receives json from client with new data, updates database, then broadcasts to all connected clients
-	// Listen for 'newData' event from client
-	socket.on("newData", (data) => handleChange(data, socket));
+	// Listen for new data from clients
+	socket.on("newData", (data) => handleChange(data));
 	// Listen for disconnect from clients
 	socket.on("disconnect", () => {
 		console.log("user disconnected");
@@ -87,99 +66,173 @@ server.listen(port, () => {
 	console.log("listening on *:" + port);
 });
 
-async function getLock(data) {
-	let query = new URLSearchParams({
-		id: data._id,
-		row: data.row,
-		column: data.column,
-		timestamp: data.timestamp,
-		color: data.color,
-	});
-	let url = process.env.OTHERHOST + "/api/getKey?" + query;
-
-	return await fetch(url, {
-		method: "GET",
-		headers: {
-			accept: "application/json",
-			"content-type": "application/json",
-		},
-	})
-		.then((res) => res.json())
-		.then((json) => {
-			if (json.locked === false) {
-				setKey(data.row, data.column, 1);
-				return true;
-			}
-			return false;
-		})
-		.catch((err) => console.error(err));
-}
-
-async function handleChange(data, socket) {
-	// aquire lock
+async function handleChange(data) {
 	const newData = JSON.parse(data);
-	let result = await getLock(newData);
-	console.log(result, "here");
-	if (result === true) {
+	const keyStatus = await acquireLocks(newData.row, newData.column);
+	setKey(newData.row, newData.column, 1);
+	let releaseRes = [];
+	// if keystatus is true, then we have the lock
+	if (keyStatus) {
 		Model.findByIdAndUpdate(
 			newData._id,
 			{ $set: { color: newData.color, timestamp: newData.timestamp } },
 			{ new: true }
 		)
-			.then((doc) => {
+			.then(async (doc) => {
 				console.log(`Updated document: ${doc}`);
-				io.emit("update", data);
-				socket.emit("update-success", doc); // emit a success message back to the client
+				clientSockets.emit("update", data);
+				// save success, release locks
 				setKey(newData.row, newData.column, 0);
+				// release result is not important since if a server fails to save it will auto restart, meaning the all locks are released
+				releaseRes = [];
+				releaseRes = await releaseLocks(
+					newData.row,
+					newData.column,
+					newData.color,
+					newData.timestamp
+				);
+				console.log("releaseRes", releaseRes);
 			})
 			.catch((err) => {
+				clientSockets.emit("update-failure", err);
 				console.error(`Error updating document: ${err}`);
-				socket.emit("update-failure", err); // emit an error message back to the client
+				// unable to save, release lock before leaving
 			});
 	} else {
-		console.log("locked");
+		// key is unavailable so don't update and drop the request
 	}
 }
 
-app.get("/api/getKey", async (req, res) => {
-	try {
-		let row = parseInt(req.query.row);
-		let column = parseInt(req.query.column);
-		let key = getKey(row, column);
-		console.log("row: " + row + " column: " + column + " key: " + key);
-		if (key === 0) {
-			try {
-				let id = req.query.id;
-				let color = req.query.color;
-				let timestamp = parseInt(req.query.timestamp) + 1;
-				let result = await Model.findOneAndUpdate(
-					{row: row, column: column}, 
-					{ $set: { color: color, timestamp: timestamp } }, 
-					{ new: true }
-				)
-					.then((doc) => {
-						console.log(`Updated document: ${doc}`);
-						io.emit("update", req.query);
-						return true;
-					})
-					.catch((err) => {
-						console.error(`Error updating document: ${err}`);
-						return false;
-					});
-				if (result == false) {
-					throw new Error("could not save");
+async function acquireLocks(row, column) {
+	const results = [];
+	const requests = otherServers.map((server) => {
+		return axios
+			.post(
+				`${server}/api/getLock`,
+				{ row: row, column: column },
+				{
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+					timeout: 1000,
 				}
-				// save in local server
-				return res.status(200).json({ locked: false });
-			} catch (err) {
-				console.error(err);
-				return res.status(409).send("could not save");
+			)
+			.then((res) => res.data)
+			.catch((err) => {});
+	});
+
+	return Promise.all(requests)
+		.then((response) => {
+			response.forEach((res) => {
+				if (!res) {
+					results.push(-1);
+				} else {
+					results.push(res.code);
+				}
+			});
+			const lockedResource = results.filter((res) => res === 1);
+			if (lockedResource.length > 0) {
+				return false;
 			}
-		} else {
-			return res.status(423).json({ locked: true });
-		}
-	} catch (err) {
-		console.error(err);
-		return res.status(400).send("there was an error");
+			return true;
+		})
+		.catch((err) => {});
+}
+
+async function releaseLocks(row, column, color, timestamp) {
+	const results = [];
+	const requests = otherServers.map((server) => {
+		return axios
+			.post(
+				`${server}/api/releaseLock`,
+				{ row: row, column: column, color: color, timestamp: timestamp },
+				{
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+					timeout: 1000,
+				}
+			)
+			.then((res) => res.data)
+			.catch((err) => {});
+	});
+
+	return Promise.all(requests)
+		.then((response) => {
+			response.forEach((res) => {
+				if (!res) {
+					results.push(-1);
+				} else {
+					results.push(res.code);
+				}
+			});
+			const lockedResource = results.filter((res) => res === 1);
+			if (lockedResource.length > 0) {
+				return false;
+			}
+			return true;
+		})
+		.catch((err) => {});
+}
+
+app.post("/api/getLock", async (req, res) => {
+	const { row, column } = req.body;
+	const key = getKey(row, column);
+	if (key === 0) {
+		setKey(row, column, 1);
+		res.send({ code: 0 });
+		console.log(getKey(row, column));
+	} else {
+		res.send({ code: 1 });
 	}
 });
+
+app.post("/api/releaseLock", async (req, res) => {
+	const { row, column, color, timestamp } = req.body;
+	const keyState = getKey(row, column);
+	if (keyState === 1) {
+		await Model.findOneAndUpdate(
+			{ row: row, column: column },
+			{ $set: { color: color, timestamp: timestamp } },
+			{ new: true }
+		)
+			.then((doc) => {
+				console.log(`Updated document: ${doc}`);
+				clientSockets.emit("update", req.body);
+				setKey(row, column, 0);
+				res.send({ saved: true });
+			})
+			.catch((err) => {
+				console.error(`Error updating document: ${err}`);
+				res.send({ saved: false });
+				restartServer();
+			});
+	}
+});
+
+function restartServer() {
+	setTimeout(function () {
+		// Listen for the 'exit' event.
+		// This is emitted when our app exits.
+		process.on("exit", function () {
+			//  Resolve the `child_process` module, and `spawn`
+			//  a new process.
+			//  The `child_process` module lets us
+			//  access OS functionalities by running any bash command.`.
+			require("child_process").spawn(process.argv.shift(), process.argv, {
+				cwd: process.cwd(),
+				detached: true,
+				stdio: "inherit",
+			});
+		});
+		process.exit();
+	}, 1000);
+}
+
+// restartServer();
+
+/**{
+ * code: 0 or 1
+ * } */
