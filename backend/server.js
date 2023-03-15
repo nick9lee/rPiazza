@@ -1,5 +1,5 @@
 // Hidden file, contains database URL
-require("dotenv").config();
+require("dotenv").config({path: `./env/.env.${process.env.NODE_ENV}`});
 const fetch = require("node-fetch");
 
 const routes = require("./routes/routes");
@@ -34,8 +34,6 @@ for (let row = 0; row < 200; row++) {
 const app = express();
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
-
-if(port == 4000) {
 	// Connect to database one
 	mongoose.connect(process.env.DATABASE_URL);
 	const database = mongoose.connection;
@@ -45,21 +43,8 @@ if(port == 4000) {
 });
 
 	database.once("connected", () => {
-	console.log("Database one Connected");
+	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
-} else {
-	// Connect to database two
-	mongoose.connect(process.env.DATABASE_TWO_URL);
-	const database = mongoose.connection;
-
-	database.on("error", (error) => {
-	console.log(error);
-});
-
-database.once("connected", () => {
-	console.log("Database two Connected");
-});
-}
 
 const cors = require("cors");
 const corsOptions = {
