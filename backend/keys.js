@@ -4,8 +4,8 @@ function getKey(row, col) {
 	return keys[row][col];
 }
 
-function setKey(col, row, val) {
-	keys[col][row] = val;
+function setKey(row, col, val) {
+	keys[row][col] = val;
 }
 
 module.exports = { getKey, setKey };
