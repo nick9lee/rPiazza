@@ -10,75 +10,73 @@ const Model = require("./model/model");
 const { getKey, setKey } = require("./keys");
 const otherServers = [process.env.SECOND_HOST, process.env.THIRD_HOST];
 
-
 const app = express();
-const { Worker } = require('worker_threads');
-const initWorker = new Worker('./initServer.js');
+const { Worker } = require("worker_threads");
+const initWorker = new Worker("./initServer.js");
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
 
-		// Connect to database one
-		mongoose.connect(process.env.DATABASE_URL);
-		const database = mongoose.connection;
+// Connect to database one
+mongoose.connect(process.env.DATABASE_URL);
+const database = mongoose.connection;
 
-		database.on("error", (error) => {
-			console.log(error);
-		});
+database.on("error", (error) => {
+	console.log(error);
+});
 
-		database.once("connected", () => {
-			console.log(`Database for ${process.env.NODE_ENV} Connected`);
-		});
+database.once("connected", () => {
+	console.log(`Database for ${process.env.NODE_ENV} Connected`);
+});
 
-		const cors = require("cors");
-		const corsOptions = {
-			origin: "*",
-			credentials: true, //access-control-allow-credentials:true
-			optionSuccessStatus: 200,
-		};
-		app.use(cors(corsOptions)); // Use this after the variable declaration
+const cors = require("cors");
+const corsOptions = {
+	origin: "*",
+	credentials: true, //access-control-allow-credentials:true
+	optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions)); // Use this after the variable declaration
 
-		const http = require("http");
-		const server = http.createServer(app);
-		const clientSockets = require("socket.io")(server, {
-			cors: {
-				origin: "*",
-				methods: ["GET", "POST"],
-			},
-			transports: ["websocket", "polling"],
-			path: "/socket",
-		});
+const http = require("http");
+const server = http.createServer(app);
+const clientSockets = require("socket.io")(server, {
+	cors: {
+		origin: "*",
+		methods: ["GET", "POST"],
+	},
+	transports: ["websocket", "polling"],
+	path: "/socket",
+});
 
-		app.use("/api", routes);
-		app.use(express.json());
-		app.get("/", (req, res) => {
-			res.send("Hello World!");
-		});
+app.use("/api", routes);
+app.use(express.json());
+app.get("/", (req, res) => {
+	res.send("Hello World!");
+});
 
-		clientSockets.on("connection", (socket) => {
-			console.log("a user connected");
-			// Listen for new data from clients
-			socket.on("newData", (data) => handleChange(data));
-			// Listen for disconnect from clients
-			socket.on("disconnect", () => {
-				console.log("user disconnected");
-			});
-		});
+clientSockets.on("connection", (socket) => {
+	console.log("a user connected");
+	// Listen for new data from clients
+	socket.on("newData", (data) => handleChange(data));
+	// Listen for disconnect from clients
+	socket.on("disconnect", () => {
+		console.log("user disconnected");
+	});
+});
 
 // Listen for a message from the worker indicating that initialization is complete
-initWorker.on('message', (message) => {
-	if (message === 'initialized') {
+initWorker.on("message", (message) => {
+	if (message === "initialized") {
 		server.listen(port, () => {
 			console.log("listening on *:" + port);
 		});
-
 	}
 });
 
 // Initialize the worker thread
 initWorker.postMessage({
-	message: 'initialize',
+	message: "initialize",
 	otherServers: otherServers,
-	databaseURL: process.env.DATABASE_URL
+	databaseURL: process.env.DATABASE_URL,
 });
 
 async function handleChange(data) {
@@ -90,8 +88,8 @@ async function handleChange(data) {
 	let releaseRes = [];
 	// if keystatus is true, then we have the lock
 	if (keyStatus) {
-		Model.findByIdAndUpdate(
-			newData._id,
+		Model.findOneAndUpdate(
+			{ row: newData.row, column: newData.column },
 			{ $set: { color: newData.color, timestamp: newData.timestamp } },
 			{ new: true }
 		)
@@ -136,7 +134,7 @@ async function acquireLocks(row, column) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => { });
+			.catch((err) => {});
 	});
 
 	return Promise.all(requests)
@@ -154,7 +152,7 @@ async function acquireLocks(row, column) {
 			}
 			return true;
 		})
-		.catch((err) => { });
+		.catch((err) => {});
 }
 
 async function releaseLocks(row, column, color, timestamp) {
@@ -173,7 +171,7 @@ async function releaseLocks(row, column, color, timestamp) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => { });
+			.catch((err) => {});
 	});
 
 	return Promise.all(requests)
@@ -191,7 +189,7 @@ async function releaseLocks(row, column, color, timestamp) {
 			}
 			return true;
 		})
-		.catch((err) => { });
+		.catch((err) => {});
 }
 
 app.post("/api/getLock", async (req, res) => {
@@ -251,8 +249,6 @@ app.post("/api/releaseOneLock", async (req, res) => {
 	const { row, column } = req.body;
 	setKey(row, column, 0);
 	res.send({ saved: true });
-
-
 });
 
 app.get("/api/getOne", async (req, res) => {
@@ -270,16 +266,12 @@ app.get("/api/getOne", async (req, res) => {
 			res.status(200).json({ color, timestamp });
 		} else {
 			// If the row and column do not exist in the database, return a 404 error
-			res.status(404).json({ message: 'Row and column not found' });
+			res.status(404).json({ message: "Row and column not found" });
 		}
-
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
 });
-
-
-
 
 // restartServer();
 
