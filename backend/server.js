@@ -83,6 +83,8 @@ initWorker.postMessage({
 
 async function handleChange(data) {
 	const newData = JSON.parse(data);
+	console.log("new data incoming: ");
+	console.log(newData);
 	const keyStatus = await acquireLocks(newData.row, newData.column);
 	setKey(newData.row, newData.column, 1);
 	let releaseRes = [];
