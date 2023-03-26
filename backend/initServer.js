@@ -1,9 +1,7 @@
 const axios = require('axios');
-const { setKey } = require("./keys");
+const { getKey, setKey } = require("./keys");
 const Model = require("./model/model");
 const mongoose = require("mongoose");
-
-
 // Used to communicate with server.js thread 
 const { parentPort } = require('worker_threads');
 
@@ -26,12 +24,14 @@ const initialize = async (otherServers, databaseURL) => {
   // if we have responsive servers
   if (responsiveServers && responsiveServers.length > 0) {
     // update database
-    await updateDatabase(responsiveServers, otherServers);
-    // close connection to db
+   await updateDatabase(responsiveServers, otherServers);
+    // close connection to db?
 
+    //  server can now process client requests
     parentPort.postMessage('initialized');
   } else {
     console.log('No servers are running');
+    parentPort.postMessage('receivedData');
     parentPort.postMessage('initialized');
 
   }
@@ -50,81 +50,7 @@ parentPort.on('message', async (message) => {
   }
 });
 
-async function initAcquireLocks(row, column, otherServers) {
-  const results = [];
-  const requests = otherServers.map((server) => {
-    return axios
-      .post(
-        `${server}/api/getLock`,
-        { row: row, column: column },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          timeout: 1000,
-        }
-      )
-      .then((res) => res.data)
-      .catch((err) => {
-      });
-  });
-
-  return Promise.all(requests)
-    .then((response) => {
-      response.forEach((res) => {
-        if (!res) {
-          results.push(-1);
-        } else {
-          results.push(res.code);
-        }
-      });
-      const lockedResource = results.filter((res) => res === 1);
-      if (lockedResource.length > 0) {
-        return false;
-      }
-      return true;
-    })
-    .catch((err) => { });
-}
-async function initReleaseLocks(row, column, otherServers) {
-  const results = [];
-  const requests = otherServers.map((server) => {
-    return axios
-      .post(
-        `${server}/api/releaseOneLock`,
-        { row: row, column: column },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          timeout: 1000,
-        }
-      )
-      .then((res) => res.data)
-      .catch((err) => { });
-  });
-
-  return Promise.all(requests)
-    .then((response) => {
-      response.forEach((res) => {
-        if (!res) {
-          results.push(-1);
-        } else {
-          results.push(res.code);
-        }
-      });
-      const lockedResource = results.filter((res) => res === 1);
-      if (lockedResource.length > 0) {
-        return false;
-      }
-      return true;
-    })
-    .catch((err) => { });
-}
-
-// returns false if no other server available
+// returns array of active servers, false if no other server available
 async function checkStatus(otherServers) {
   const responsiveServers = [];
   await Promise.all(otherServers.map(serverName => {
@@ -133,7 +59,7 @@ async function checkStatus(otherServers) {
         if (response.status === 200) {
           // responsive server
           responsiveServers.push(serverName);
-        } 
+        }
       })
       .catch(error => {
         // do nothing, server not on
@@ -148,60 +74,100 @@ async function checkStatus(otherServers) {
     return responsiveServers;
   }
 }
+async function updateDatabase(responsiveServers) {
+  console.log("starting update");
 
-async function updateDatabase(responsiveServers, otherServers) {
+  // choose random server
+  const randomIndex = Math.floor(Math.random() * responsiveServers.length);
+  const server = responsiveServers[randomIndex];
+  let data;
 
-  // For every cell
-  for (let row = 0; row < 200; row++) {
-    console.log(`row ${row} done`);
-    for (let col = 0; col < 200; col++) {
-      // Acquire locks
+  try {
+    // acquire lock
+    const lockResponse = await axios.post(`${server}/api/lockDatabase`);
+    //console.log(lockResponse.data);
+    //console.log("got lock");
 
-      const keyStatus = await initAcquireLocks(row, col, otherServers);
-      // if keystatus is true, then we have the lock
-      if (keyStatus) {
-        setKey(row, col, 1);
-        // Find the row and column in database of current server
-        await Model.findOne({ row: row, column: col })
-          .then(async (doc) => {
+    // get all data from server we are updating from
+    const latestServer = await axios.get(`${server}/api/getAll`);
+    let newData = latestServer.data;
+    // console.log(newData);
+    console.log("gotAll from server");
 
-            // For 1st working server 
-            const server = responsiveServers[0];
+    // get all data from own database 
+		const data = await Model.find().sort({row: 1, column: 1});
+		let transformedArray = [...Array(200)].map((e) => Array(200));
+		data.forEach((entry, index) => {
+			transformedArray[entry.row][entry.column] = entry;
+		});
 
-            // get color and timestamp 
-            await axios.get(`${server}/api/getOne`, {
-              params: {
-                row: row,
-                column: col
-              }
-            })
-              .then(async (response) => {
-                // if pixel has been updated
-                if (response.data.timestamp > doc.timestamp) {
-                  // update database
-                  doc.color = response.data.color;
-                  doc.timestamp = response.data.timestamp;
-                  await doc.save();
-                  console.log(`Updated document: ${doc}`);
-                }
+  // let server know we have got all data, server port open 
+  parentPort.postMessage('receivedData');
+
+  // release lock, other servers can now process client requests
+    await startServerComm(server);
+
+    // update database
+    await compareAndUpdate(transformedArray, newData);
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+
+async function compareAndUpdate(oldData, newData) {
+  console.log(oldData.length);
+  for (let row = 0; row < oldData.length; row++) {
+    for (let col = 0; col < oldData[row].length; col++) {
+      let oldPixel = oldData[row][col];
+      let newPixel = newData[row][col];
+      // if we need to update 
+
+      if (newPixel.timestamp > oldPixel.timestamp) {
+        console.log(`row: ${row} col: ${col}`);
+        console.log(`old pixel ts = ${oldPixel.timestamp}`);
+        console.log(`new pixel ts = ${newPixel.timestamp}`);
+        // acquire lock
+        if (getKey(row, col) === 0) {
+          setKey(row, col, 1);
+          // update
+          try {
+            await Model.findOneAndUpdate(
+              { row: newPixel.row, column: newPixel.column },
+              { $set: { color: newPixel.color, timestamp: newPixel.timestamp } },
+              { new: true }
+            )
+              .then((doc) => {
+                console.log(`Updated doc in init: ${doc}`);
               })
-              .catch((error) => {
-                // error in api call
+              .catch((err) => {
+                console.error(`Error updating document: ${err}`);
               });
-
-              setKey(row, col, 0);
-              initReleaseLocks(row, col, otherServers);
-          })
-          .catch((err) => {
-            // error with db
-          });
-
-
-
-
-
+          } catch (err) {
+            console.error(`Error while finding document with row=${row} and col=${col}:`, err);
+          }
+          // release lock
+          setKey(row, col, 0);
+        } else {
+          // we can assume some other server is already updating this pixel 
+        }
+      } else {
+        // doesn't need updating 
       }
-
     }
   }
 }
+
+async function startServerComm(server) {
+  // listen for ack 
+  parentPort.on('message', async (message) => {
+    // this server can process update requests from other servers
+    if (message === 'receivedDataAck') {
+      // release lock, client requests can now be processed 
+      const releaseAllRes = await axios.post(`${server}/api/releaseDatabase`);
+      console.log(releaseAllRes.data);
+      console.log("lock released");
+    }
+  });
+} 
