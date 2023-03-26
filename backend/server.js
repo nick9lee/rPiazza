@@ -215,7 +215,7 @@ app.post("/api/releaseLock", async (req, res) => {
 		)
 			.then((doc) => {
 				console.log(`Updated document: ${doc}`);
-				clientSockets.emit("update", req.body);
+				clientSockets.emit("update", JSON.stringify(doc));
 				setKey(row, column, 0);
 				res.send({ saved: true });
 			})

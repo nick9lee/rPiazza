@@ -117,10 +117,12 @@ function App() {
 		});
 
 		return () => {
-			socket.off("connect");
-			socket.off("disconnect");
-			socket.off("update");
-			ignore = true;
+			if (socket.readyState === 1) {
+				socket.off("connect");
+				socket.off("disconnect");
+				socket.off("update");
+				ignore = true;
+			}
 		};
 	}, []);
 
