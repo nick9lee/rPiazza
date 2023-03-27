@@ -2,15 +2,15 @@
 #Set the AWS default region
 export AWS_DEFAULT_REGION=us-east-2
 
-export AWS_ACCESS_KEY_ID=AKIAYJCE3TZYZRYG2XUK
-export AWS_SECRET_ACCESS_KEY=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
+export AWS_ACCESS_KEY_ID=
+export AWS_SECRET_ACCESS_KEY=
 
 #Set the internal or private DNS names of the HA nodes here
-HA_NODE_1=ip-172-31-13-126.us-east-2.compute.internal
-HA_NODE_2=ip-172-31-11-136.us-east-2.compute.internal
+HA_NODE_1=
+HA_NODE_2=
 
 #Set the ElasticIP ID Value here
-ALLOCATION_ID=eipalloc-08b78c563f2812c79
+ALLOCATION_ID=
 ###############################################################
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin
