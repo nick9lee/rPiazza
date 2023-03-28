@@ -115,7 +115,7 @@ async function updateDatabase(responsiveServers) {
 }
 
 async function compareAndUpdate(oldData, newData) {
-	console.log(oldData.length);
+	//console.log(oldData.length);
 	for (let row = 0; row < oldData.length; row++) {
 		for (let col = 0; col < oldData[row].length; col++) {
 			let oldPixel = oldData[row][col];
@@ -169,8 +169,8 @@ async function startServerComm(server) {
 		if (message === "receivedDataAck") {
 			// release lock, client requests can now be processed
 			const releaseAllRes = await axios.post(`${server}/api/releaseDatabase`);
-			console.log(releaseAllRes.data);
-			console.log("lock released");
+			//console.log(releaseAllRes.data);
+			//console.log("database lock released");
 		}
 	});
 }
