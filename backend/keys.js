@@ -1,3 +1,6 @@
+let serverLockTimeout = 10; // 10 seconds for server to acquire its key back 
+let keyTimer = new Array(200).fill().map(() => new Array(200).fill());
+
 let keys = new Array(200).fill().map(() => new Array(200).fill(0));
 
 function getKey(row, col) {
@@ -8,7 +11,23 @@ function setKey(row, col, val) {
 	keys[row][col] = val;
 }
 
-module.exports = { getKey, setKey };
+function setKeyTimer(row, col) {
+	console.log(`Timer set for row:${row}, col:${col}`);
+	const lockTimerId = setTimeout(() => {
+		setKey(row, col, 0);
+		//console.log(`Lock released by timeout for row ${row}, column ${col}`);
+	  }, serverLockTimeout * 1000);
+	  // pass into array
+	  keyTimer[row][col] = lockTimerId;
+}
+
+function clearKeyTimer(row, col) {
+	//console.log(`Timer released for row:${row}, col:${col}`);
+	clearTimeout(keyTimer[row][col]);
+
+}
+
+module.exports = { getKey, setKey, setKeyTimer, clearKeyTimer };
 
 // Server 1 receives input.
 // Server 1 broadcasts a lock request to all other servers (Server 2 and Server 3).

@@ -7,7 +7,7 @@ const axios = require("axios");
 const express = require("express");
 const mongoose = require("mongoose");
 const Model = require("./model/model");
-const { getKey, setKey } = require("./keys");
+const { getKey, setKey, setKeyTimer, clearKeyTimer } = require("./keys");
 const otherServers = [process.env.SECOND_HOST, process.env.THIRD_HOST];
 
 const app = express();
@@ -15,6 +15,7 @@ const { Worker } = require("worker_threads");
 const initWorker = new Worker("./initServer.js");
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
+
 
 // Connect to database one
 mongoose.connect(process.env.DATABASE_URL);
@@ -91,11 +92,11 @@ async function handleChange(data) {
 	console.log(newData);
 	const keyStatus = await acquireLocks(newData.row, newData.column);
 	if (getKey(newData.row, newData.column) === 0) {
-		setKey(newData.row, newData.column, 1); // ----------
+		setKey(newData.row, newData.column, 1); 
 		let releaseRes = [];
 		// if keystatus is true, then we have the lock
 		if (keyStatus) {
-			Model.findByIdAndUpdate(
+			Model.findOneAndUpdate(
 				{ row: newData.row, column: newData.column },
 				{ $set: { color: newData.color, timestamp: newData.timestamp } },
 				{ new: true }
@@ -118,9 +119,11 @@ async function handleChange(data) {
 				.catch((err) => {
 					clientSockets.emit("update-failure", err);
 					console.error(`Error updating document: ${err}`);
+					setKey(newData.row, newData.column, 0);
 					// unable to save, release lock before leaving
 				});
 		} else {
+			setKey(newData.row, newData.column, 0);
 			// key is unavailable so don't update and drop the request
 		}
 	}
@@ -142,7 +145,7 @@ async function acquireLocks(row, column) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => {});
+			.catch((err) => { });
 	});
 
 	return Promise.all(requests)
@@ -160,7 +163,7 @@ async function acquireLocks(row, column) {
 			}
 			return true;
 		})
-		.catch((err) => {});
+		.catch((err) => { });
 }
 
 async function releaseLocks(row, column, color, timestamp) {
@@ -179,7 +182,7 @@ async function releaseLocks(row, column, color, timestamp) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => {});
+			.catch((err) => { });
 	});
 
 	return Promise.all(requests)
@@ -197,7 +200,7 @@ async function releaseLocks(row, column, color, timestamp) {
 			}
 			return true;
 		})
-		.catch((err) => {});
+		.catch((err) => { });
 }
 
 app.post("/api/getLock", async (req, res) => {
@@ -205,8 +208,8 @@ app.post("/api/getLock", async (req, res) => {
 	const key = getKey(row, column);
 	if (key === 0) {
 		setKey(row, column, 1);
-
-		res.send({ code: 0 });
+		setKeyTimer(row, column);
+		res.send({code: 0});
 	} else {
 		res.send({ code: 1 });
 	}
@@ -254,6 +257,7 @@ app.post("/api/releaseLock", async (req, res) => {
 			.then((doc) => {
 				console.log(`Updated document: ${doc}`);
 				clientSockets.emit("update", JSON.stringify(doc));
+				clearKeyTimer(row, column);
 				setKey(row, column, 0);
 				res.send({ saved: true });
 			})
