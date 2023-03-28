@@ -28,7 +28,6 @@ database.once("connected", () => {
 	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
 
-
 const cors = require("cors");
 const corsOptions = {
 	origin: "*",
@@ -45,19 +44,20 @@ const clientSockets = require("socket.io")(server, {
 		methods: ["GET", "POST"],
 	},
 	transports: ["websocket", "polling"],
-	path: "/socket",
+	path: "/api/socket",
 });
 
 app.use("/api", routes);
 app.use(express.json());
 
-app.get("/", (req, res) => {
-	res.send("Hello World!");
+app.get("/api/status", (req, res) => {
+	res.send("Good!");
 });
 
 // Listen for a message from the worker thread
-initWorker.on('message', (message) => {
-	if (message === 'initialized') { 	// clients can now connect
+initWorker.on("message", (message) => {
+	if (message === "initialized") {
+		// clients can now connect
 		// console.log('init completed');
 		clientSockets.on("connection", (socket) => {
 			console.log("a user connected");
@@ -68,14 +68,13 @@ initWorker.on('message', (message) => {
 				console.log("user disconnected");
 			});
 		});
-	} else if (message === 'receivedData') {
+	} else if (message === "receivedData") {
 		// other servers can now communicate with this server
 		//	console.log('data loading completed');
 		server.listen(port, () => {
 			console.log("listening on *:" + port);
 		});
-		initWorker.postMessage('receivedDataAck');
-
+		initWorker.postMessage("receivedDataAck");
 	}
 });
 
@@ -85,9 +84,6 @@ initWorker.postMessage({
 	otherServers: otherServers,
 	databaseURL: process.env.DATABASE_URL,
 });
-
-
-  
 
 async function handleChange(data) {
 	const newData = JSON.parse(data);
@@ -245,7 +241,6 @@ app.post("/api/releaseDatabase", async (req, res) => {
 	// send response indicating success
 	res.send({ code: 0 });
 });
-
 
 app.post("/api/releaseLock", async (req, res) => {
 	const { row, column, color, timestamp } = req.body;
