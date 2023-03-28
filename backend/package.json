@@ -8,8 +8,9 @@
 		"start-server-1": "NODE_ENV=server1 nodemon server.js",
 		"start-server-2": "NODE_ENV=server2 nodemon server.js",
 		"start-server-3": "NODE_ENV=server3 nodemon server.js",
-		"start-server-1-live": "PORT=4000 OTHERHOST=http://piazza2.ahmedamer.tech nodemon server.js",
-		"start-server-2-live": "PORT=4000 OTHERHOST=http://piazza1.ahmedamer.tech nodemon server.js"
+		"start-server-1live": "NODE_ENV=server1live nodemon server.js",
+		"start-server-2live": "NODE_ENV=server2live nodemon server.js",
+		"start-server-3live": "NODE_ENV=server3live nodemon server.js"
 	},
 	"author": "",
 	"license": "ISC",
