@@ -31,12 +31,16 @@ router.post("/lockDatabase", async (req, res) => {
 			while (!lockObtained) {
 				if (getKey(row, col) === 0) {
 					setKey(row, col, 1);
+					console.log(`locked row:${row} col:${col}`)
 					lockObtained = true;
-				}
+				} else {
+					// delay for 100 milliseconds before trying again
+					await new Promise(resolve => setTimeout(resolve, 1000));
+				  }
 			}
 		}
 	}
-	//console.log("Database Lock Done")
+	console.log("Database Lock Done")
 	// send response indicating success
 	res.send({ code: 0 });
 });
@@ -48,7 +52,7 @@ router.post("/releaseDatabase", async (req, res) => {
 			setKey(row, col, 0);
 		}
 	}
-	// console.log("Database Release Done")
+	 console.log("Database Release Done")
 	// send response indicating success
 	res.send({ code: 0 });
 });

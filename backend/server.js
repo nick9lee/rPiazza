@@ -63,7 +63,7 @@ app.get("/api/status", (req, res) => {
 initWorker.on("message", (message) => {
 	if (message === "initialized") {
 		// clients can now connect
-		 console.log('init completed');
+		console.log('init completed');
 		clientSockets.on("connection", (socket) => {
 			console.log("a user connected");
 			// Listen for new data from clients
@@ -96,7 +96,7 @@ async function handleChange(data) {
 	console.log(newData);
 	const keyStatus = await acquireLocks(newData.row, newData.column);
 	if (getKey(newData.row, newData.column) === 0) {
-		setKey(newData.row, newData.column, 1); 
+		setKey(newData.row, newData.column, 1);
 		let releaseRes = [];
 		// if keystatus is true, then we have the lock
 		if (keyStatus) {
@@ -214,7 +214,7 @@ app.post("/api/getLock", async (req, res) => {
 	if (key === 0) {
 		setKey(row, column, 1);
 		setKeyTimer(row, column);
-		res.send({code: 0});
+		res.send({ code: 0 });
 	} else {
 		res.send({ code: 1 });
 	}
@@ -245,39 +245,44 @@ app.post("/api/releaseLock", async (req, res) => {
 	}
 });
 
-/*
+
 /// use this to demo database failure
-if(port == 4000) {
-	console.log(`port is ${port}`);
-const timeout = setTimeout(() => {
-    mongoose.connection.close(() => {
-        console.log('MongoDB connection closed due to application timeout');
-    });
-}, 30000);
-}
-*/
-
-function restartServer() {
-	setTimeout(function () {
-		// Listen for the 'exit' event.
-		// This is emitted when our app exits.
-		process.on("exit", function () {
-			console.log("Restarting");
-			server.close();
-			//  Resolve the `child_process` module, and `spawn`
-			//  a new process.
-			//  The `child_process` module lets us
-			//  access OS functionalities by running any bash command.`.
-			require("child_process").spawn(process.argv.shift(), process.argv, {
-				cwd: process.cwd(),
-				detached: true,
-				stdio: "inherit",
-			});
+if (port == 4000) {
+	const timeout = setTimeout(() => {
+		mongoose.connection.close(() => {
+			console.log('MongoDB connection closed due to application timeout');
 		});
-	}, 1000);
+	}, 60000);
 }
 
- restartServer();
+
+setTimeout(function () {
+	// Listen for the 'exit' event.
+	// This is emitted when our app exits.
+	process.on("exit", function () {
+		console.log("Restarting");
+		// Close server 
+		server.close();
+		// Close WebSocket connections
+		clientSockets.close();
+		// Terminate the worker thread
+		initWorker.terminate();
+		// Disconnect from the database
+		mongoose.disconnect();
+		//  Resolve the `child_process` module, and `spawn`
+		//  a new process.
+		//  The `child_process` module lets us
+		//  access OS functionalities by running any bash command.`.
+		const child = require("child_process").spawn(process.argv.shift(), process.argv, {
+			cwd: process.cwd(),
+			detached: true,
+			stdio: "inherit",
+		});
+
+		child.unref();
+	});
+}, 1000);
+
 
 /**{
  * code: 0 or 1

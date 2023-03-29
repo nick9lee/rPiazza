@@ -1,4 +1,4 @@
-let serverLockTimeout = 60; // 10 seconds for server to acquire its key back 
+let serverLockTimeout = 5; // 10 seconds for server to acquire its key back 
 let keyTimer = new Array(200).fill().map(() => new Array(200).fill());
 
 let keys = new Array(200).fill().map(() => new Array(200).fill(0));
