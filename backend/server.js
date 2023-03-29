@@ -215,35 +215,6 @@ app.post("/api/getLock", async (req, res) => {
 	}
 });
 
-app.post("/api/lockDatabase", async (req, res) => {
-	for (let row = 0; row < 200; row++) {
-		for (let col = 0; col < 200; col++) {
-			// for every pixel
-			let lockObtained = false;
-			while (!lockObtained) {
-				if (getKey(row, col) === 0) {
-					setKey(row, col, 1);
-					lockObtained = true;
-				}
-			}
-		}
-	}
-	//console.log("Database Lock Done")
-	// send response indicating success
-	res.send({ code: 0 });
-});
-
-app.post("/api/releaseDatabase", async (req, res) => {
-	for (let row = 0; row < 200; row++) {
-		for (let col = 0; col < 200; col++) {
-			// for every pixel
-			setKey(row, col, 0);
-		}
-	}
-	// console.log("Databse Release Done")
-	// send response indicating success
-	res.send({ code: 0 });
-});
 
 app.post("/api/releaseLock", async (req, res) => {
 	const { row, column, color, timestamp } = req.body;

@@ -12,7 +12,7 @@ function setKey(row, col, val) {
 }
 
 function setKeyTimer(row, col) {
-	console.log(`Timer set for row:${row}, col:${col}`);
+	//console.log(`Timer set for row:${row}, col:${col}`);
 	const lockTimerId = setTimeout(() => {
 		setKey(row, col, 0);
 		//console.log(`Lock released by timeout for row ${row}, column ${col}`);

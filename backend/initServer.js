@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 // Used to communicate with server.js thread
 const { parentPort } = require("worker_threads");
 
+
 // Run the initialization code
 const initialize = async (otherServers, databaseURL) => {
 	console.log("Initialization beginning");
@@ -92,7 +93,7 @@ async function updateDatabase(responsiveServers) {
 		const latestServer = await axios.get(`${server}/api/getAll`);
 		let newData = latestServer.data;
 		// console.log(newData);
-		console.log("gotAll from server");
+		//console.log("gotAll from server");
 
 		// get all data from own database
 		const data = await Model.find().sort({ row: 1, column: 1 });
