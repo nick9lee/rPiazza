@@ -34,8 +34,8 @@ def message(data):
     print("Received message from server:", data)
 
 # connect to the server
-sio.connect(SOCKET_URL, transports=["websocket"], socketio_path="/socket")
-sio2.connect(SOCKET_URL_2, transports=["websocket"], socketio_path="/socket")
+sio.connect(SOCKET_URL, transports=["websocket"], socketio_path="/api/socket/")
+sio2.connect(SOCKET_URL_2, transports=["websocket"], socketio_path="/api/socket/")
 
 # define data to send
 data1 = {

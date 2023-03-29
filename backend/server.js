@@ -101,24 +101,28 @@ async function handleChange(data) {
 		// if keystatus is true, then we have the lock
 		if (keyStatus) {
 			Model.findOneAndUpdate(
-				{ row: newData.row, column: newData.column },
+				{ row: newData.row, column: newData.column, timestamp: { $lt: newData.timestamp } },
 				{ $set: { color: newData.color, timestamp: newData.timestamp } },
 				{ new: true }
 			)
 				.then(async (doc) => {
-					console.log(`Updated document: ${doc}`);
-					clientSockets.emit("update", data);
-					// save success, release locks
-					setKey(newData.row, newData.column, 0);
-					// release result is not important since if a server fails to save it will auto restart, meaning the all locks are released
-					releaseRes = [];
-					releaseRes = await releaseLocks(
-						newData.row,
-						newData.column,
-						newData.color,
-						newData.timestamp
-					);
-					console.log("releaseRes", releaseRes);
+					if(doc) {
+						console.log(`Updated document: ${doc}`);
+						clientSockets.emit("update", data);
+						// save success, release locks
+						setKey(newData.row, newData.column, 0);
+						// release result is not important since if a server fails to save it will auto restart, meaning the all locks are released
+						releaseRes = [];
+						releaseRes = await releaseLocks(
+							newData.row,
+							newData.column,
+							newData.color,
+							newData.timestamp
+						);
+						console.log("releaseRes", releaseRes);
+					} else {
+						throw new Error("timestamp is not the latest");
+					}
 				})
 				.catch((err) => {
 					clientSockets.emit("update-failure", err);
@@ -226,16 +230,20 @@ app.post("/api/releaseLock", async (req, res) => {
 	const keyState = getKey(row, column);
 	if (keyState === 1) {
 		await Model.findOneAndUpdate(
-			{ row: row, column: column },
+			{ row: row, column: column, timestamp: { $lt: timestamp } },
 			{ $set: { color: color, timestamp: timestamp } },
 			{ new: true }
 		)
 			.then((doc) => {
-				console.log(`Updated document: ${doc}`);
-				clientSockets.emit("update", JSON.stringify(doc));
-				clearKeyTimer(row, column);
-				setKey(row, column, 0);
-				res.send({ saved: true });
+				if(doc){
+					console.log(`Updated document: ${doc}`);
+					clientSockets.emit("update", JSON.stringify(doc));
+					clearKeyTimer(row, column);
+					setKey(row, column, 0);
+					res.send({ saved: true });
+				} else {
+					throw new Error("timestamp is not the latest");
+				}
 			})
 			.catch((err) => {
 				console.error(`Error updating document: ${err}`);
