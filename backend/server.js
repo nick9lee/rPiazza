@@ -49,7 +49,7 @@ const clientSockets = require("socket.io")(server, {
 		methods: ["GET", "POST"],
 	},
 	transports: ["websocket", "polling"],
-	path: "/api/socket",
+	path: "/api/socket/",
 });
 
 app.use("/api", routes);
