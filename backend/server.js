@@ -245,7 +245,7 @@ app.post("/api/releaseLock", async (req, res) => {
 	}
 });
 
-
+/*
 /// use this to demo database failure
 if (port == 4000) {
 	const timeout = setTimeout(() => {
@@ -254,7 +254,7 @@ if (port == 4000) {
 		});
 	}, 60000);
 }
-
+*/
 
 setTimeout(function () {
 	// Listen for the 'exit' event.
