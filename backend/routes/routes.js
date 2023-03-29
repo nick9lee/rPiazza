@@ -17,7 +17,10 @@ router.get("/getAll", async (req, res) => {
 		res.json(transformedArray);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
+		process.exit();
+
 	}
+	
 });
 
 router.post("/lockDatabase", async (req, res) => {

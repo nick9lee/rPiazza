@@ -23,11 +23,15 @@ const database = mongoose.connection;
 
 database.on("error", (error) => {
 	console.log(error);
+	process.exit();
+
 });
 
 database.once("connected", () => {
 	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
+
+
 
 const cors = require("cors");
 const corsOptions = {
@@ -59,7 +63,7 @@ app.get("/api/status", (req, res) => {
 initWorker.on("message", (message) => {
 	if (message === "initialized") {
 		// clients can now connect
-		// console.log('init completed');
+		 console.log('init completed');
 		clientSockets.on("connection", (socket) => {
 			console.log("a user connected");
 			// Listen for new data from clients
@@ -120,6 +124,7 @@ async function handleChange(data) {
 					clientSockets.emit("update-failure", err);
 					console.error(`Error updating document: ${err}`);
 					setKey(newData.row, newData.column, 0);
+					process.exit();
 					// unable to save, release lock before leaving
 				});
 		} else {
@@ -235,16 +240,30 @@ app.post("/api/releaseLock", async (req, res) => {
 			.catch((err) => {
 				console.error(`Error updating document: ${err}`);
 				res.send({ saved: false });
-				restartServer();
+				process.exit();
 			});
 	}
 });
+
+/*
+/// use this to demo database failure
+if(port == 4000) {
+	console.log(`port is ${port}`);
+const timeout = setTimeout(() => {
+    mongoose.connection.close(() => {
+        console.log('MongoDB connection closed due to application timeout');
+    });
+}, 30000);
+}
+*/
 
 function restartServer() {
 	setTimeout(function () {
 		// Listen for the 'exit' event.
 		// This is emitted when our app exits.
 		process.on("exit", function () {
+			console.log("Restarting");
+			server.close();
 			//  Resolve the `child_process` module, and `spawn`
 			//  a new process.
 			//  The `child_process` module lets us
@@ -255,11 +274,10 @@ function restartServer() {
 				stdio: "inherit",
 			});
 		});
-		process.exit();
 	}, 1000);
 }
 
-// restartServer();
+ restartServer();
 
 /**{
  * code: 0 or 1

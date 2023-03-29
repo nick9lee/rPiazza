@@ -144,6 +144,7 @@ async function compareAndUpdate(oldData, newData) {
 							})
 							.catch((err) => {
 								console.error(`Error updating document: ${err}`);
+                process.exit();
 							});
 					} catch (err) {
 						console.error(
