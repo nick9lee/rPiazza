@@ -73,6 +73,7 @@ function App() {
 	let lastMousePos = null;
 	const [paintedCanvas, setPaintedCanvas] = useState(null);
 	const [isConnected, setIsConnected] = useState(socket.connected);
+	const [isTimedOut, setIsTimedOut] = useState(false);
 
 	// load the data first time the page loads
 	useEffect(() => {
@@ -114,6 +115,10 @@ function App() {
 				canvas[parsed.row][parsed.column].timestamp = parsed.timestamp;
 				return canvas;
 			});
+			setIsTimedOut(true);
+			setTimeout(() => {
+				setIsTimedOut(false);
+			}, 60000); // 1 minute before they can draw again
 		});
 
 		return () => {
@@ -167,7 +172,13 @@ function App() {
 
 	const mouseUp = useCallback(
 		(event) => {
-			if (lastMousePos.x === event.pageX && lastMousePos.y === event.pageY) {
+			console.log(isTimedOut);
+			if (
+				!isTimedOut &&
+				lastMousePos.x === event.pageX &&
+				lastMousePos.y === event.pageY
+			) {
+				console.log("here");
 				let temp = structuredClone(paintedCanvas);
 				const data = temp[relMousePos.y][relMousePos.x];
 				data.color = currentColor.current ?? "#FFFFFF";
@@ -178,7 +189,7 @@ function App() {
 			document.removeEventListener("mousemove", mouseMove);
 			document.removeEventListener("mouseup", mouseUp);
 		},
-		[mouseMove, paintedCanvas, lastMousePos]
+		[mouseMove, paintedCanvas, lastMousePos, isTimedOut]
 	);
 
 	const startPan = useCallback(
@@ -359,6 +370,9 @@ function App() {
 						);
 					})}
 				</div>
+			</div>
+			<div className="timeoutMessage">
+				Please Note that there is a 1 min cooldown between each tile draw.
 			</div>
 		</div>
 	);
