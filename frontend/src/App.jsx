@@ -118,7 +118,7 @@ function App() {
 			setIsTimedOut(true);
 			setTimeout(() => {
 				setIsTimedOut(false);
-			}, 60000); // 1 minute before they can draw again
+			}, 15000); // 1 minute before they can draw again
 		});
 
 		return () => {
@@ -372,7 +372,7 @@ function App() {
 				</div>
 			</div>
 			<div className="timeoutMessage">
-				Please Note that there is a 1 min cooldown between each tile draw.
+				Please Note that there is a 15 second cooldown between each tile draw.
 			</div>
 		</div>
 	);
