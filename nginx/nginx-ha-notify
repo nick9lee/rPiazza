@@ -54,6 +54,8 @@ logger -t nginx-ha-keepalived "Transition to state '$STATE' on VRRP instance '$N
 
 case $STATE in
         "MASTER")
+        # If it is the master instance
+                  # Associate the elatic IP to this instance
                   aws ec2 disassociate-address --association-id $ASSOCIATION_ID
                   aws ec2 associate-address --allocation-id $ALLOCATION_ID --instance-id $INSTANCE_ID
                   service nginx start ||:
@@ -61,8 +63,9 @@ case $STATE in
                   exit 0
                   ;;
         "BACKUP"|"FAULT")
+        # IF it is a backup instance of the proxy, or in fault state
                   if [ "$INSTANCE_ID" = "$EIP_INSTANCE" ]
-                  then
+                  then # Disassociate the elatic IP from this instance to the other instance
                     aws ec2 disassociate-address --association-id $ASSOCIATION_ID
                     aws ec2 associate-address --allocation-id $ALLOCATION_ID --instance-id $OTHER_INSTANCE_ID
                     logger -t nginx-ha-keepalived "BACKUP Path Transfer from $INSTANCE_ID to $OTHER_INSTANCE_ID"

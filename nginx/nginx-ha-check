@@ -6,13 +6,13 @@ STATEFILE=/var/run/nginx-ha-keepalived.state
 
 if [ -s "$STATEFILE" ]; then
     . "$STATEFILE"
-    case "$STATE" in
+    case "$STATE" in # Check the state of keepalived
         "BACKUP"|"MASTER"|"FAULT")
                 service nginx status
                 exit $?
                 ;;
         *|"")
-                logger -t nginx-ha-keepalived "Unknown state: '$STATE'"
+                logger -t nginx-ha-keepalived "Unknown state: '$STATE'" # return any error states
                 exit 1
                 ;;
     esac
