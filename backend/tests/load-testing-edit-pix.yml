@@ -1,0 +1,25 @@
+# back-end load testing when editing pixels
+config:
+  target: "http://127.0.0.1:80"
+  socketio:
+    path: "/api/socket/"
+  phases: # number of users = duration*arrivalRate
+    - name: "Load Testing...10 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 10 
+    - name: "Load Testing...20 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 20 
+    - name: "Load Testing...30 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 30 
+
+scenarios:
+  - name : "Edit pixels "
+    engine: "socketio"
+    flow:
+      - loop:
+        - emit:
+          channel: "newData"
+          data: '{"color" : "#FFFFFF", "row" : {{$randomNumber(0, 199)}}, "column" : {{$randomNumber(0, 199)}}, "timestamp" : 50}'
+        count: 10

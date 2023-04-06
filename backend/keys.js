@@ -1,4 +1,3 @@
-let serverLockTimeout = 5; // 10 seconds for server to acquire its key back 
 let keyTimer = new Array(200).fill().map(() => new Array(200).fill());
 
 let keys = new Array(200).fill().map(() => new Array(200).fill(0));
@@ -11,12 +10,12 @@ function setKey(row, col, val) {
 	keys[row][col] = val;
 }
 
-function setKeyTimer(row, col) {
+function setKeyTimer(row, col, timeout) {
 	//console.log(`Timer set for row:${row}, col:${col}`);
 	const lockTimerId = setTimeout(() => {
 		setKey(row, col, 0);
 		//console.log(`Lock released by timeout for row ${row}, column ${col}`);
-	  }, serverLockTimeout * 1000);
+	  }, timeout * 1000);
 	  // pass into array
 	  keyTimer[row][col] = lockTimerId;
 }

@@ -15,7 +15,7 @@ const { Worker } = require("worker_threads");
 const initWorker = new Worker("./initServer.js");
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
-
+// to do, handle/ errors when the server that is updating an initializing server goes down
 
 // Connect to database one
 mongoose.connect(process.env.DATABASE_URL);
@@ -128,7 +128,10 @@ async function handleChange(data) {
 					clientSockets.emit("update-failure", err);
 					console.error(`Error updating document: ${err}`);
 					setKey(newData.row, newData.column, 0);
-					process.exit();
+					if (err.message != "timestamp is not the latest") {
+						// restart for any other db errors
+						process.exit();
+					}
 					// unable to save, release lock before leaving
 				});
 		} else {
@@ -217,7 +220,7 @@ app.post("/api/getLock", async (req, res) => {
 	const key = getKey(row, column);
 	if (key === 0) {
 		setKey(row, column, 1);
-		setKeyTimer(row, column);
+		setKeyTimer(row, column, 5);
 		res.send({ code: 0 });
 	} else {
 		res.send({ code: 1 });

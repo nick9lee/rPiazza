@@ -111,12 +111,12 @@ async function updateDatabase(responsiveServers) {
     // update database
     await compareAndUpdate(transformedArray, newData);
   } catch (error) {
-    console.error(error);
+    //console.error(error);
+    console.log("Error while updating db on init, server startup will continue");
   }
 }
 
 async function compareAndUpdate(oldData, newData) {
-  //console.log(oldData.length);
   for (let row = 0; row < oldData.length; row++) {
     for (let col = 0; col < oldData[row].length; col++) {
       let oldPixel = oldData[row][col];

@@ -1,0 +1,24 @@
+# back-end load testing when loading page
+config:
+  target: "http://127.0.0.1:80"
+  phases: # number of users = duration*arrivalRate
+    - name: "Load Testing...10 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 10 
+    - name: "Load Testing...20 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 20 
+    - name: "Load Testing...30 users/second for 10 seconds"
+      duration: 10 
+      arrivalRate: 30 
+
+scenarios:
+  - name: "Connect to website"
+    flow:
+      - get:
+          url: "/api/getAll"
+      - expect:
+          json:
+            - isArray: true
+            - hasSize: 200
+      - think: 10 # wait 10 seconds before sending emits
