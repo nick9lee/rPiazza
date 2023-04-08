@@ -24,14 +24,11 @@ const database = mongoose.connection;
 database.on("error", (error) => {
 	console.log(error);
 	process.exit();
-
 });
 
 database.once("connected", () => {
 	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
-
-
 
 const cors = require("cors");
 const corsOptions = {
@@ -63,7 +60,7 @@ app.get("/api/status", (req, res) => {
 initWorker.on("message", (message) => {
 	if (message === "initialized") {
 		// clients can now connect
-		console.log('init completed');
+		console.log("init completed");
 		clientSockets.on("connection", (socket) => {
 			console.log("a user connected");
 			// Listen for new data from clients
@@ -101,14 +98,18 @@ async function handleChange(data) {
 		// if keystatus is true, then we have the lock
 		if (keyStatus) {
 			Model.findOneAndUpdate(
-				{ row: newData.row, column: newData.column, timestamp: { $lt: newData.timestamp } },
+				{
+					row: newData.row,
+					column: newData.column,
+					timestamp: { $lt: newData.timestamp },
+				},
 				{ $set: { color: newData.color, timestamp: newData.timestamp } },
 				{ new: true }
 			)
 				.then(async (doc) => {
-					if(doc) {
+					if (doc) {
 						console.log(`Updated document: ${doc}`);
-						clientSockets.emit("update", data);
+
 						// save success, release locks
 						setKey(newData.row, newData.column, 0);
 						// release result is not important since if a server fails to save it will auto restart, meaning the all locks are released
@@ -119,6 +120,8 @@ async function handleChange(data) {
 							newData.color,
 							newData.timestamp
 						);
+
+						clientSockets.emit("update", data); // move this below line 116
 						console.log("releaseRes", releaseRes);
 					} else {
 						throw new Error("timestamp is not the latest");
@@ -157,7 +160,7 @@ async function acquireLocks(row, column) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => { });
+			.catch((err) => {});
 	});
 
 	return Promise.all(requests)
@@ -175,7 +178,7 @@ async function acquireLocks(row, column) {
 			}
 			return true;
 		})
-		.catch((err) => { });
+		.catch((err) => {});
 }
 
 async function releaseLocks(row, column, color, timestamp) {
@@ -194,7 +197,7 @@ async function releaseLocks(row, column, color, timestamp) {
 				}
 			)
 			.then((res) => res.data)
-			.catch((err) => { });
+			.catch((err) => {});
 	});
 
 	return Promise.all(requests)
@@ -212,7 +215,7 @@ async function releaseLocks(row, column, color, timestamp) {
 			}
 			return true;
 		})
-		.catch((err) => { });
+		.catch((err) => {});
 }
 
 app.post("/api/getLock", async (req, res) => {
@@ -227,7 +230,6 @@ app.post("/api/getLock", async (req, res) => {
 	}
 });
 
-
 app.post("/api/releaseLock", async (req, res) => {
 	const { row, column, color, timestamp } = req.body;
 	const keyState = getKey(row, column);
@@ -238,7 +240,7 @@ app.post("/api/releaseLock", async (req, res) => {
 			{ new: true }
 		)
 			.then((doc) => {
-				if(doc){
+				if (doc) {
 					console.log(`Updated document: ${doc}`);
 					clientSockets.emit("update", JSON.stringify(doc));
 					clearKeyTimer(row, column);
@@ -272,7 +274,7 @@ setTimeout(function () {
 	// This is emitted when our app exits.
 	process.on("exit", function () {
 		console.log("Restarting");
-		// Close server 
+		// Close server
 		server.close();
 		// Close WebSocket connections
 		clientSockets.close();
@@ -284,16 +286,19 @@ setTimeout(function () {
 		//  a new process.
 		//  The `child_process` module lets us
 		//  access OS functionalities by running any bash command.`.
-		const child = require("child_process").spawn(process.argv.shift(), process.argv, {
-			cwd: process.cwd(),
-			detached: true,
-			stdio: "inherit",
-		});
+		const child = require("child_process").spawn(
+			process.argv.shift(),
+			process.argv,
+			{
+				cwd: process.cwd(),
+				detached: true,
+				stdio: "inherit",
+			}
+		);
 
 		child.unref();
 	});
 }, 1000);
-
 
 /**{
  * code: 0 or 1
