@@ -10,6 +10,9 @@ import "./Canvas.css";
 
 import io from "socket.io-client";
 import ColorPicker from "./ColorPicker";
+import Timer from "./Timer";
+
+const timeoutDurationMS = 15000;
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 650;
@@ -55,6 +58,7 @@ function Canvas() {
 	const [paintedCanvas, setPaintedCanvas] = useState(null);
 	const [isConnected, setIsConnected] = useState(socket.connected);
 	const [isTimedOut, setIsTimedOut] = useState(false);
+	const [timeoutTimer, setTimeoutTimer] = useState(0);
 
 	// load the data first time the page loads
 	useEffect(() => {
@@ -96,11 +100,13 @@ function Canvas() {
 				canvas[parsed.row][parsed.column].timestamp = parsed.timestamp;
 				return canvas;
 			});
+
 			setIsTimedOut(true);
+			setTimeoutTimer(15);
 			setTimeout(() => {
+				console.log("here");
 				setIsTimedOut(false);
-			}, 1); // 15 seconds before they can draw again (15000)
-			// TODO: Change this back to 15000
+			}, 15000);
 		});
 
 		return () => {
@@ -154,13 +160,11 @@ function Canvas() {
 
 	const mouseUp = useCallback(
 		(event) => {
-			console.log(isTimedOut);
 			if (
 				!isTimedOut &&
 				lastMousePos.x === event.pageX &&
 				lastMousePos.y === event.pageY
 			) {
-				console.log("here");
 				let temp = structuredClone(paintedCanvas);
 				const data = temp[relMousePos.y][relMousePos.x];
 				data.color = currentColor.current ?? "#FFFFFF";
@@ -329,6 +333,7 @@ function Canvas() {
 					currentColor.current = color;
 				}}
 			/>
+			<Timer timeOutTimer={timeoutTimer} setTimeOutTimer={setTimeoutTimer} />
 		</div>
 	);
 }
