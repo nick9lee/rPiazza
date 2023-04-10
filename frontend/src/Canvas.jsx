@@ -26,19 +26,38 @@ const ZOOM_SENSITIVITY = 500;
 
 const ratio = 1;
 
+// intialize the socket connection
 const socket = io(import.meta.env.VITE_SOCKET_URL, {
 	transport: ["websocket", "polling"],
 	path: "/api/socket/",
 });
 
+/**
+ * This function returns the difference between two points
+ * @param {*} p1
+ * @param {*} p2
+ * @returns
+ */
 function diffPoints(p1, p2) {
 	return { x: p1.x - p2.x, y: p1.y - p2.y };
 }
 
+/**
+ * This function returns the sum of two points
+ * @param {} p1
+ * @param {*} p2
+ * @returns
+ */
 function addPoints(p1, p2) {
 	return { x: p1.x + p2.x, y: p1.y + p2.y };
 }
 
+/**
+ * This function returns the point scaled by a factor
+ * @param {*} p1
+ * @param {number} scale
+ * @returns
+ */
 function scalePoint(p1, scale) {
 	return { x: p1.x / scale, y: p1.y / scale };
 }
@@ -60,7 +79,8 @@ function Canvas() {
 	const [isTimedOut, setIsTimedOut] = useState(false);
 	const [timeoutTimer, setTimeoutTimer] = useState(0);
 
-	// load the data first time the page loads
+	// This useEffect is called when the component is mounted and it loads up the
+	// canvas from the server and sets up the socket connection
 	useEffect(() => {
 		// do the primary fetch
 		let ignore = false;
@@ -119,12 +139,13 @@ function Canvas() {
 		};
 	}, []);
 
-	// update last offset
+	// updates the last offset everytime that it changes so it
+	// so that it can be used in the mouseMove function
 	useEffect(() => {
 		lastOffsetRef.current = offset;
 	}, [offset]);
 
-	// reset
+	// reset the canvas so the math can be computed correctly
 	const reset = useCallback((context) => {
 		if (context) {
 			// adjust for device pixel density
@@ -143,7 +164,7 @@ function Canvas() {
 		}
 	}, []);
 
-	// functions for panning
+	// functions for panning the canvas
 	const mouseMove = useCallback(
 		(event) => {
 			if (context) {
@@ -158,6 +179,9 @@ function Canvas() {
 		[context]
 	);
 
+	// function for when the mouse is released.
+	// If the mouse is released and has not moved from its original position
+	// then it will draw a pixel on the canvas
 	const mouseUp = useCallback(
 		(event) => {
 			if (
@@ -178,6 +202,7 @@ function Canvas() {
 		[mouseMove, paintedCanvas, lastMousePos, isTimedOut]
 	);
 
+	// function for when the mouse is pressed down
 	const startPan = useCallback(
 		(event) => {
 			document.addEventListener("mousemove", mouseMove);
@@ -188,7 +213,8 @@ function Canvas() {
 		[mouseMove, mouseUp]
 	);
 
-	// setup the canvas and the context
+	// setup the canvas and the context this is executed when the
+	// canvas is first loaded and everytime the canvas is reset
 	useLayoutEffect(() => {
 		if (canvasRef.current) {
 			const renderCtx = canvasRef.current.getContext("2d");
@@ -199,7 +225,7 @@ function Canvas() {
 		}
 	}, [reset]);
 
-	// pan when offset or scale changes
+	// pan when offset or scale changes so that the canvas is always in the correct position
 	useLayoutEffect(() => {
 		if (context && lastOffsetRef.current) {
 			const offsetDiff = scalePoint(
@@ -211,7 +237,7 @@ function Canvas() {
 		}
 	}, [context, offset, scale]);
 
-	// draw
+	// draw the canvas
 	useLayoutEffect(() => {
 		if (context) {
 			const squareSize = 10;
@@ -245,6 +271,7 @@ function Canvas() {
 	}, [context, scale, offset, paintedCanvas]);
 
 	// add event listener on canvas for mouse position
+	// so we know where the mouse is at all times
 	useEffect(() => {
 		const canvasElem = canvasRef.current;
 		if (canvasElem === null) {
@@ -271,13 +298,15 @@ function Canvas() {
 		};
 	}, []);
 
+	// add event listener on canvas for mouse wheel to zoom.
+	// Tricky portion is to zoom where the mouse position is.
 	useEffect(() => {
 		const canvasElem = canvasRef.current;
 		if (canvasElem === null) {
 			return;
 		}
 
-		// this is tricky. Update the viewport's "origin" such that
+		// Update the viewport's "origin" such that
 		// the mouse doesn't move during scale - the 'zoom point' of the mouse
 		// before and after zoom is relatively the same position on the viewport
 		function handleWheel(event) {
@@ -306,7 +335,7 @@ function Canvas() {
 		return () => canvasElem.removeEventListener("wheel", handleWheel);
 	}, [context, mousePos.x, mousePos.y, scale]);
 
-	// maintain the relative mouse position
+	// maintain the relative mouse position when the canvas is panned or scaled
 	useEffect(() => {
 		if (context) {
 			const storedTransform = context.getTransform();
