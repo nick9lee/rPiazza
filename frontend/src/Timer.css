@@ -1,0 +1,7 @@
+.timeoutMessage {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 2em;
+	margin-top: 2em;
+}
