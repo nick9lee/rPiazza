@@ -12,23 +12,21 @@ const initialize = async (otherServers, databaseURL) => {
   // Connect to database one
   mongoose.connect(databaseURL);
   const database = mongoose.connection;
-
+  // database error handling
   database.on("error", (error) => {
     console.log(error);
   });
-
   database.once("connected", () => { });
 
   // check if we can even connect to a database
   const responsiveServers = await checkStatus(otherServers);
   // if we have responsive servers
   if (responsiveServers && responsiveServers.length > 0) {
-    // update database
+    // update database, waits for promise to resolve 
     await updateDatabase(responsiveServers);
-    // close connection to db?
-
-    //  server can now process client requests
+    // server can now process client requests
     parentPort.postMessage("initialized");
+
   } else {
     console.log("No servers are running");
     parentPort.postMessage("receivedData");
@@ -48,7 +46,12 @@ parentPort.on("message", async (message) => {
   }
 });
 
-// returns array of active servers, false if no other server available
+/**
+ * Obtains a list of servers and returns a list of active servers.
+ * @param {array} otherServers - List of other servers.
+ * @returns {array} - List of active servers
+ * @returns {false} - If no servers available 
+ */
 async function checkStatus(otherServers) {
   const responsiveServers = [];
   await Promise.all(
@@ -75,48 +78,58 @@ async function checkStatus(otherServers) {
     return responsiveServers;
   }
 }
-async function updateDatabase(responsiveServers) {
-  console.log("starting update");
 
-  // choose random server
-  const randomIndex = Math.floor(Math.random() * responsiveServers.length);
-  const server = responsiveServers[randomIndex];
-  let data;
+/**
+ * Updates server database from another server/database.
+ * @param {array} responsiveServers - List of active servers
+ */
+function updateDatabase(responsiveServers) {
+  return new Promise(async (resolve) => {
+    // console.log("starting update");
 
-  try {
-    // acquire lock
-    const lockResponse = await axios.post(`${server}/api/lockDatabase`);
-    //console.log(lockResponse.data);
-    //console.log("got lock");
+    // choose random server
+    const randomIndex = Math.floor(Math.random() * responsiveServers.length);
+    const server = responsiveServers[randomIndex];
+    let data;
 
-    // get all data from server we are updating from
-    const latestServer = await axios.get(`${server}/api/getAll`);
-    let newData = latestServer.data;
-    // console.log(newData);
-    //console.log("gotAll from server");
+    try {
+      // acquire lock
+      const lockResponse = await axios.post(`${server}/api/lockDatabase`);
+      //console.log(lockResponse.data);
+      console.log("Got db lock");
 
-    // get all data from own database
-    const data = await Model.find().sort({ row: 1, column: 1 });
-    let transformedArray = [...Array(200)].map((e) => Array(200));
-    data.forEach((entry, index) => {
-      transformedArray[entry.row][entry.column] = entry;
-    });
+      // get all data from server we are updating from
+      const latestServer = await axios.get(`${server}/api/getAll`);
+      let newData = latestServer.data;
+      // console.log(newData);
+      //console.log("gotAll from server");
 
-    // let server know we have got all data, server port open
-    parentPort.postMessage("receivedData");
+      // get all data from own database
+      const data = await Model.find().sort({ row: 1, column: 1 });
+      let transformedArray = [...Array(200)].map((e) => Array(200));
+      data.forEach((entry, index) => {
+        transformedArray[entry.row][entry.column] = entry;
+      });
 
-    // release lock, other servers can now process client requests
-    await startServerComm(server);
-
-    // update database
-    await compareAndUpdate(transformedArray, newData);
-  } catch (error) {
-    //console.error(error);
-    console.log("Error while updating db on init, server startup will continue");
-  }
+      // release lock, other servers can now process client requests
+      await startServerComm(server);
+      // update database
+      await compareData(transformedArray, newData);
+      // resolve promise
+      resolve();
+    } catch (error) {
+      //console.error(error);
+      console.log("Error while updating db on init, server startup will continue");
+    }
+  });
 }
 
-async function compareAndUpdate(oldData, newData) {
+/**
+ * Compares two databases and updates if needed
+ * @param {array} oldData - Database from current server
+ * @param {array} newData - Database from active/live server
+ */
+async function compareData(oldData, newData) {
   for (let row = 0; row < oldData.length; row++) {
     for (let col = 0; col < oldData[row].length; col++) {
       let oldPixel = oldData[row][col];
@@ -168,15 +181,30 @@ async function compareAndUpdate(oldData, newData) {
   }
 }
 
+/**
+ * Releases database lock to allow server to server communication 
+ * This allows for other servers to process other client requests.
+ * @param {string} server - Address of server with locked database
+ */
 async function startServerComm(server) {
-  // listen for ack
-  parentPort.on("message", async (message) => {
-    // this server can process update requests from other servers
-    if (message === "receivedDataAck") {
-      // release lock, client requests can now be processed
-      const releaseAllRes = await axios.post(`${server}/api/releaseDatabase`);
-      //console.log(releaseAllRes.data);
-      //console.log("database lock released");
-    }
+  // create a promise that will be resolved when the ack message is received
+  const ackPromise = new Promise((resolve) => {
+    parentPort.on("message", (message) => {
+      if (message === "receivedDataAck") {
+        resolve();
+      }
+    });
   });
+
+  // send the message to the parent
+  parentPort.postMessage("receivedData");
+
+  // wait for the ack message to be received
+  await ackPromise;
+
+  // release lock, other servers can now process client requests
+  const releaseAllRes = await axios.post(`${server}/api/releaseDatabase`);
+  console.log("database lock released");
 }
+
+

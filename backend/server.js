@@ -9,23 +9,21 @@ const mongoose = require("mongoose");
 const Model = require("./model/model");
 const { getKey, setKey, setKeyTimer, clearKeyTimer } = require("./keys");
 const otherServers = [process.env.SECOND_HOST, process.env.THIRD_HOST];
-
 const app = express();
 const { Worker } = require("worker_threads");
 const initWorker = new Worker("./initServer.js");
 
 const port = process.env.PORT || 4000; // default to 4000 if PORT is not set
-// to do, handle/ errors when the server that is updating an initializing server goes down
 
-// Connect to database one
+// Connect to database 
 mongoose.connect(process.env.DATABASE_URL);
 const database = mongoose.connection;
-
+// error handling for database connection
 database.on("error", (error) => {
 	console.log(error);
 	process.exit();
 });
-
+// actions to take when database connects
 database.once("connected", () => {
 	console.log(`Database for ${process.env.NODE_ENV} Connected`);
 });
@@ -49,9 +47,10 @@ const clientSockets = require("socket.io")(server, {
 	path: "/api/socket/",
 });
 
+// Forward api requests to the routes file for handling
 app.use("/api", routes);
 app.use(express.json());
-
+// Test for checking server status.
 app.get("/api/status", (req, res) => {
 	res.send("Good!");
 });
@@ -72,7 +71,7 @@ initWorker.on("message", (message) => {
 		});
 	} else if (message === "receivedData") {
 		// other servers can now communicate with this server
-		//	console.log('data loading completed');
+		console.log('Data loading completed');
 		server.listen(port, () => {
 			console.log("listening on *:" + port);
 		});
@@ -81,12 +80,18 @@ initWorker.on("message", (message) => {
 });
 
 // Initialize the worker thread
+// This is used to update the database from other active servers/database
 initWorker.postMessage({
 	message: "initialize",
 	otherServers: otherServers,
 	databaseURL: process.env.DATABASE_URL,
 });
 
+/**
+ * set these for all servers
+ * @param {string} data - Data received from a client request
+ * @emit - Update success/failure
+ */
 async function handleChange(data) {
 	const newData = JSON.parse(data);
 	console.log("new data incoming: ");
@@ -143,7 +148,12 @@ async function handleChange(data) {
 		}
 	}
 }
-
+/**
+ * Obtains locks from all other servers.
+ * @param {int} row - The row of pixel to modify.
+ * @param {int} column - The column of pixel to modify.
+ * @returns {bool} - Returns true if locks were acquired.
+ */
 async function acquireLocks(row, column) {
 	const results = [];
 	const requests = otherServers.map((server) => {
@@ -181,6 +191,14 @@ async function acquireLocks(row, column) {
 		.catch((err) => {});
 }
 
+/**
+ * Releases locks from all other servers.
+ * @param {int} row - The row of pixel to modify.
+ * @param {int} column - The column of pixel to modify.
+ * @param {string} color - The color of pixel to modify.
+ * @param {int} timestamp - The timestamp of pixel to modify.
+ * @returns {bool} - True if locks were released
+ */
 async function releaseLocks(row, column, color, timestamp) {
 	const results = [];
 	const requests = otherServers.map((server) => {
@@ -258,17 +276,11 @@ app.post("/api/releaseLock", async (req, res) => {
 	}
 });
 
-/*
-/// use this to demo database failure
-if (port == 4000) {
-	const timeout = setTimeout(() => {
-		mongoose.connection.close(() => {
-			console.log('MongoDB connection closed due to application timeout');
-		});
-	}, 60000);
-}
-*/
 
+
+/**
+ * Handles the restarting of server by spawning a child process.
+ */
 setTimeout(function () {
 	// Listen for the 'exit' event.
 	// This is emitted when our app exits.
@@ -300,6 +312,13 @@ setTimeout(function () {
 	});
 }, 1000);
 
-/**{
- * code: 0 or 1
- * } */
+/*
+/// use this to demo database failure
+if (port == 4000) {
+	const timeout = setTimeout(() => {
+		mongoose.connection.close(() => {
+			console.log('MongoDB connection closed due to application timeout');
+		});
+	}, 60000);
+}
+*/
