@@ -43,7 +43,7 @@ data1 = {
     "color": "#FFFFFF",
     "row": 0,
     "column": 0,
-    "timestamp": 1,
+    "timestamp": 63,
     "_v": 0
 }
 
@@ -52,7 +52,7 @@ data2 = {
     "color": "#A06A42",
     "row": 0,
     "column": 0,
-    "timestamp": 1,
+    "timestamp": 63,
     "_v": 0
 }
 

@@ -120,13 +120,6 @@ function Canvas() {
 				canvas[parsed.row][parsed.column].timestamp = parsed.timestamp;
 				return canvas;
 			});
-
-			setIsTimedOut(true);
-			setTimeoutTimer(15);
-			setTimeout(() => {
-				console.log("here");
-				setIsTimedOut(false);
-			}, 15000);
 		});
 
 		return () => {
@@ -195,6 +188,12 @@ function Canvas() {
 				data.timestamp += 1;
 
 				socket.emit("newData", JSON.stringify(data));
+				setTimeoutTimer(15);
+				setIsTimedOut(true);
+				setTimeout(() => {
+					console.log("here");
+					setIsTimedOut(false);
+				}, 15000);
 			}
 			document.removeEventListener("mousemove", mouseMove);
 			document.removeEventListener("mouseup", mouseUp);

@@ -1,4 +1,5 @@
 import subprocess
+import syslog
 from time import sleep
 
 """
@@ -14,23 +15,23 @@ def restart_services():
     Function that restarts the service and returns any errors seen.
     """
     try:
-        print("Restarting Keepalived & NGINX")
+        syslog.syslog("Restarting Keepalived & NGINX")
         subprocess.run("sudo systemctl start nginx", shell=True) # restart nginx
         subprocess.run("sudo systemctl start keepalived", shell=True) # restart keepalived
-        print("Restarted")
+        syslog.syslog("Restarted")
     except Exception as e:
-        print(e) 
+        syslog.syslog(e) 
 
 while(1): # Constantly check
     try: # Check for active status is NGINX and Keepalived
         NGINX_State = subprocess.check_output("sudo systemctl is-active nginx", shell=True).decode("utf-8").strip()
         KA_State = subprocess.check_output("sudo systemctl is-active keepalived", shell=True).decode("utf-8").strip()
     except: # If error, then restart services
-        print("Error occured in checking active status")
+        syslog.syslog("Error occured in checking active status")
         restart_services()
     else: # If inactive, then restart services
         if KA_State == "inactive" or NGINX_State == "inactive":
-            print("A service is inactive")
+            syslog.syslog("A service is inactive")
             restart_services()
             
 
