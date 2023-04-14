@@ -1,5 +1,24 @@
-# CPSC559-Project
-CPSC 559 project files and code
+# r/Piazza
+CPSC559 Project
+
+## architecture
+
+![architecture](./Images/Architecture.png)
+
+## user interface
+
+![user interface](./Images/UserInterface.png)
+
+## sequence diagram
+
+![sequence diagram](./Images/SequenceDiagram.png)
+
+## video
+
+<video width="320" height="240" controls>
+  <source src="./Images/ProjectRecordingShortened.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 ## Local Development
 
