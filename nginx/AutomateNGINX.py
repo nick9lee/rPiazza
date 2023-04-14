@@ -16,6 +16,7 @@ def restart_services():
     """
     try:
         syslog.syslog("Restarting Keepalived & NGINX")
+        sleep(60000)
         subprocess.run("sudo systemctl start nginx", shell=True) # restart nginx
         subprocess.run("sudo systemctl start keepalived", shell=True) # restart keepalived
         syslog.syslog("Restarted")
