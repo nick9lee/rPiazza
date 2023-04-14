@@ -44,6 +44,13 @@ start frontend:
 try npm install if you get errors with npm
 ```npm install```
 
+bypass proxy in local development:
+change .env.development to (point to server1):
+```
+VITE_SERVER_URL=http://localhost:4000/api
+VITE_SOCKET_URL=http://localhost:4000/
+```
+
 ## Remote Development (AWS)
 In order to set up the project in AWS, we set up 5 servers on 3 machines (for now, can expand to 5 different machines).
 
